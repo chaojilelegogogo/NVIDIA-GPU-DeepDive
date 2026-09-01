@@ -1,0 +1,1 @@
+-I"/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/03-async-pipelines" -I"/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/cmake/.." -isystem "/usr/local/cuda/targets/sbsa-linux/include"

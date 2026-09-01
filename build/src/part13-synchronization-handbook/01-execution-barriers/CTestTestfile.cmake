@@ -1,0 +1,16 @@
+# CMake generated Testfile for 
+# Source directory: /mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers
+# Build directory: /mnt/nt00098/nvgpu_learn/build/src/part13-synchronization-handbook/01-execution-barriers
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+add_test([=[part13_exec_case01_cta_barrier_reduce]=] "/mnt/nt00098/nvgpu_learn/build/src/part13-synchronization-handbook/01-execution-barriers/part13_exec_case01_cta_barrier_reduce")
+set_tests_properties([=[part13_exec_case01_cta_barrier_reduce]=] PROPERTIES  _BACKTRACE_TRIPLES "/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/cmake/AddCudaCase.cmake;26;add_test;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;3;add_part13_cuda_case;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;0;")
+add_test([=[part13_exec_case02_warp_sync]=] "/mnt/nt00098/nvgpu_learn/build/src/part13-synchronization-handbook/01-execution-barriers/part13_exec_case02_warp_sync")
+set_tests_properties([=[part13_exec_case02_warp_sync]=] PROPERTIES  _BACKTRACE_TRIPLES "/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/cmake/AddCudaCase.cmake;26;add_test;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;5;add_part13_cuda_case;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;0;")
+add_test([=[part13_exec_case03_cluster_sync]=] "/mnt/nt00098/nvgpu_learn/build/src/part13-synchronization-handbook/01-execution-barriers/part13_exec_case03_cluster_sync")
+set_tests_properties([=[part13_exec_case03_cluster_sync]=] PROPERTIES  _BACKTRACE_TRIPLES "/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/cmake/AddCudaCase.cmake;26;add_test;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;7;add_part13_cuda_case;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;0;")
+add_test([=[part13_exec_case04_grid_sync]=] "/mnt/nt00098/nvgpu_learn/build/src/part13-synchronization-handbook/01-execution-barriers/part13_exec_case04_grid_sync")
+set_tests_properties([=[part13_exec_case04_grid_sync]=] PROPERTIES  _BACKTRACE_TRIPLES "/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/cmake/AddCudaCase.cmake;26;add_test;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;9;add_part13_cuda_case;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;0;")
+add_test([=[part13_exec_case05_bar_arrive]=] "/mnt/nt00098/nvgpu_learn/build/src/part13-synchronization-handbook/01-execution-barriers/part13_exec_case05_bar_arrive")
+set_tests_properties([=[part13_exec_case05_bar_arrive]=] PROPERTIES  _BACKTRACE_TRIPLES "/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/cmake/AddCudaCase.cmake;26;add_test;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;11;add_part13_cuda_case;/mnt/nt00098/nvgpu_learn/src/part13-synchronization-handbook/01-execution-barriers/CMakeLists.txt;0;")

@@ -1,0 +1,2 @@
+# Empty custom commands generated dependencies file for part13_async_case03_tma_transaction_inspect.
+# This may be replaced when dependencies are built.

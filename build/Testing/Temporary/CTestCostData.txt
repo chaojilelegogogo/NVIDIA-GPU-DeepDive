@@ -1,0 +1,21 @@
+part13_case01_plain_vs_release_acquire 7 0.0158804
+part13_case02_relaxed_vs_release_rmw 7 0.017187
+part13_case03_acquire_load 7 0.0159056
+part13_case04_acq_rel_lock 7 0.0159851
+part13_case05_threadfence_vs_release 7 0.015578
+part13_case06_scopes 7 0.0155457
+part13_case07_seq_cst 7 0.0161819
+part13_exec_case05_bar_arrive 5 0.0218176
+part13_case08_order_scope_payload 5 0.0218507
+part13_exec_case01_cta_barrier_reduce 3 0.0375126
+part13_exec_case02_warp_sync 3 0.0378004
+part13_exec_case03_cluster_sync 3 0.0378976
+part13_exec_case04_grid_sync 3 0.0380162
+part13_async_case01_cp_async_pipeline 3 0.0376045
+part13_async_case02_mbarrier_phases 3 0.0364471
+part13_async_case03_tma_transaction 2 0.0577841
+part13_tensor_case01_mma_sync 3 0.0362009
+part13_collective_case01_warp_collectives 3 0.0375078
+part13_collective_case02_atom_vs_red 3 0.0359771
+part09_case01_ffma 1 0.117309
+---

@@ -1,0 +1,20 @@
+Start testing: Aug 07 10:16 UTC
+----------------------------------------------------------
+1/20 Testing: part09_case01_ffma
+1/20 Test: part09_case01_ffma
+Command: "/mnt/nt00098/nvgpu_learn/build/src/part09-sass/part09_case01_ffma"
+Directory: /mnt/nt00098/nvgpu_learn/build/src/part09-sass
+"part09_case01_ffma" start time: Aug 07 10:16 UTC
+Output:
+----------------------------------------------------------
+GPU: NVIDIA Thor  sm_110
+ffma: all lanes saw 1.5*2.0+3.0 = 6.0
+<end of output>
+Test time =   0.12 sec
+----------------------------------------------------------
+Test Passed.
+"part09_case01_ffma" end time: Aug 07 10:16 UTC
+"part09_case01_ffma" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Aug 07 10:16 UTC
