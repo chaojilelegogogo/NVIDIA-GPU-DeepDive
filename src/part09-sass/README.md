@@ -16,4 +16,4 @@ ctest --test-dir build -R part09_ --output-on-failure
 #   build/.../artifacts/part09_case01_ffma.sass
 ```
 
-对照文档：[第九部分 SASS](../../docs/part09-sass.md) §9.1.1。
+对照文档：[第九部分 SASS](../../docs/vol2-cuda-software/part09-sass.md) §9.1.1。

@@ -165,4 +165,4 @@ ld.global            # payload
 1. 这些 executable 主要验证 API 能正常执行；kernel 依次 launch，不能用运行结果证明复杂跨 CTA memory model。
 2. 真正 producer/consumer 实验不能让两个普通 CTA 无限自旋并假定同时驻留；应使用 cooperative launch、persistent-kernel 设计，或拆成两个 kernel。
 
-配套文档：[13.2 Memory Ordering](../../../docs/part13-synchronization-handbook/02-memory-ordering.md)。
+配套文档：[13.2 Memory Ordering](../../../docs/vol2-cuda-software/part13-synchronization-handbook/02-memory-ordering.md)。
