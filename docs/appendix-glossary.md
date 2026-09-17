@@ -15,6 +15,7 @@
   - [1.2 算力与性能度量](#sec-1-2)
   - [1.3 存储层次与访问模式](#sec-1-3)
   - [1.4 性能分析与优化](#sec-1-4)
+- [1.5 通信与分布式基础](#sec-1-5)
 - [第二部分 · NVIDIA GPGPU 专属术语](#sec-2)
   - [2.1 硬件架构](#sec-2-1)
   - [2.2 执行模型](#sec-2-2)
@@ -24,6 +25,7 @@
   - [2.6 软件栈（CUDA C++ → PTX → SASS）](#sec-2-6)
   - [2.7 代际新特性（Ampere → Hopper → Blackwell）](#sec-2-7)
   - [2.8 工具与生态](#sec-2-8)
+  - [2.9 通信库与互联特性](#sec-2-9)
 
 ---
 
@@ -86,6 +88,22 @@
 - **Stall**（停顿/停滞）：执行单元因等待（数据未就绪、资源冲突等）而无法发射指令。GPU 靠切换其它 Warp 掩盖 stall。见 Part 4、Part 9。
 - **Benchmark / Microbenchmark**（基准测试/微基准）：针对单一硬件行为（如某指令吞吐、某访存模式延迟）编写的小型测量程序，用于反推微架构细节。本教程大量结论来自 Citadel Research 等微基准论文。
 - **Profiling**（性能剖析）：用工具（Nsight Compute/Systems、`nvprof` 等）采集 kernel 运行时的硬件计数器，定位瓶颈。见 Part 9、Part 11。
+
+<a id="sec-1-5"></a>
+
+## 1.5 通信与分布式基础
+
+- **Collective Communication**（集合通信）：一组进程/GPU 共同参与的通信操作（AllReduce 等），与点对点（P2P）相对。术语体系源自 MPI。见 Part 15。
+- **Rank / World Size**：参与通信的进程编号 / 进程总数。GPU 语境下通常 1 Rank = 1 GPU。见 Part 15.1。
+- **AllReduce / ReduceScatter / AllGather / AllToAll**：四大集合算子，语义与通信量公式见 Part 15.1；`AllReduce ≈ ReduceScatter + AllGather`。
+- **α-β 模型**：通信时间 = α（每步固定延迟）+ β×n（每字节传输时间）。通信算法选型的基础工具：小消息怕步数、大消息怕流量。见 Part 15.2。
+- **Ring / Tree / Double Binary Tree**：三类主流集合算法拓扑。Ring 带宽最优（≈2M，与 N 无关）但步数 O(N)；Tree/RHD 步数 O(log N)。见 Part 15.2。
+- **Hierarchical / Two-shot AllReduce**（分层/两阶段 AllReduce）：节点内归约 + 节点间归约 + 节点内广播，把慢链路流量压缩到 1/节点卡数。见 Part 15.2。
+- **In-Network Reduction**（网内归约）：把 Reduce 计算下沉到交换机芯片（SHARP 系列技术）。见 Part 15.2 §5。
+- **DP / TP / PP / EP / SP**（数据/张量/流水线/专家/序列并行）：分布式训练的并行维度，各自对应不同的集合算子组合。见 Part 16。
+- **ZeRO / FSDP**：参数分片的数据并行变体，梯度同步用 ReduceScatter、参数重构用 AllGather。见 Part 16.1。
+- **Communication-Computation Overlap**（通信-计算重叠）：把通信排到独立 Stream 与计算并发，或用无关计算填通信缝隙。见 Part 15.5。
+- **PGAS**（Partitioned Global Address Space，分区全局地址空间）：多节点内存拼成全局地址空间的编程模型，是 NVSHMEM 的理论根基。见 Part 15.4。
 
 ---
 
@@ -231,6 +249,19 @@
 - **cuBLAS / cuDNN / cuSPARSE**：NVIDIA 官方的线性代数库 / 深度神经网络库 / 稀疏矩阵库，工业级实现可作性能参照。见 Part 12。
 - **NVCC Flags：`-arch` / `-use_fast_math` / `--ptxas-options=-v`**：`-arch=sm_XX` 指定目标架构；`-use_fast_math` 启用快速数学（牺牲精度换吞吐）；`--ptxas-options=-v` 打印寄存器/Spill 用量统计。见 Part 8、Part 11。
 - **FlashAttention / FlashMLA / DeepGEMM**：社区开源的高性能 Attention / GEMM kernel 代表作，是 Part 12 源码分析的最终目标。见 Part 12。
+
+<a id="sec-2-9"></a>
+
+## 2.9 通信库与互联特性
+
+- **NCCL**（NVIDIA Collective Communications Library）：NVIDIA 的 GPU 集合通信库，"多 GPU 世界的 cuBLAS"。通信 kernel 跑在 SM 上，内置 Ring/Tree/NVLS 算法 × LL/LL128/Simple 协议的自动选择。见 Part 15.3。
+- **LL / LL128 / Simple**：NCCL 的三种传输协议，区别在数据与完成标志（flag）的耦合粒度（8B / 128B / 大块 DMA），是 α-β 权衡的微观实现。见 Part 15.3 §4。
+- **Channel（NCCL）**：一条独立的逻辑环 + 专用通信资源；大数据切多 channel 并行以打满多链路带宽。见 Part 15.3 §3。
+- **NVSHMEM**：NVIDIA 的 PGAS 通信库，支持 kernel 内单边 put/get/signal，用于路由运行期才确定的细粒度通信（MoE dispatch/combine）。见 Part 15.4。
+- **IBGDA**（InfiniBand GPUDirect Async）：kernel 内线程直接填写 RDMA 工作请求并按门铃，CPU 退出数据面。见 Part 15.4 §3。
+- **GPUDirect RDMA**：网卡直接读写 GPU 显存、绕过 CPU 与主存的技术，是跨节点通信低延迟的前提。见 Part 14.3。
+- **NVLS / NVLink SHARP**：Hopper 起 NVSwitch 芯片内完成 AllReduce 归约，节点内通信流量与 SM 占用同时大降。见 Part 15.3 §6。
+- **SHARP**（Scalable Hierarchical Aggregation and Reduction Protocol）：把归约下沉到交换机的技术族（NVSwitch 版 = NVLS，IB 版 = IB SHARP）。见 Part 15.2 §5。
 
 ---
 
