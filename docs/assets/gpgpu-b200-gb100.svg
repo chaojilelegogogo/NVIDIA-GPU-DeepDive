@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 820" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <linearGradient id="die" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f3d2e"/><stop offset="1" stop-color="#0a2a20"/>
+    </linearGradient>
+    <linearGradient id="gpc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2e7d4f"/><stop offset="1" stop-color="#1e5c38"/>
+    </linearGradient>
+    <linearGradient id="sm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#23a06b"/><stop offset="1" stop-color="#157a4e"/>
+    </linearGradient>
+  </defs>
+  <style>
+    .title{font-size:20px;font-weight:700;fill:#e6f5ee}
+    .sub{font-size:12px;fill:#a6d1bd}
+    .lbl{font-size:11px;fill:#eef7f2;font-weight:600}
+    .lbl2{font-size:10px;fill:#cbe6d9}
+    .box-lab{font-size:12px;font-weight:700;text-anchor:middle}
+    .cnt{font-size:13px;font-weight:700;text-anchor:middle}
+  </style>
+
+  <text x="20" y="30" class="title">NVIDIA B200 - GB100 (Blackwell) - Dual-Die Topology (Chiplet)</text>
+  <text x="20" y="48" class="sub">Two reticle-limit dies connected by NV-HBI (10 TB/s) on CoWoS-L; presented to CUDA as one GPU. 74 SM/die x 2 = 148 SM.</text>
+
+  <rect x="20" y="60" width="840" height="270" rx="8" fill="url(#die)" stroke="#3f9c72" stroke-width="1.5"/>
+  <text x="440" y="84" class="box-lab" fill="#e6f5ee">GB100 Dual-Die Package (TSMC 4NP, 208B transistors)</text>
+
+  <rect x="330" y="96" width="220" height="198" rx="6" fill="#123f31" stroke="#2e7d4f" stroke-width="1.5"/>
+  <text x="440" y="118" class="box-lab" fill="#a6d1bd">NV-HBI</text>
+  <text x="440" y="136" class="box-lab" fill="#a6d1bd">10 TB/s</text>
+  <text x="440" y="156" class="lbl2" text-anchor="middle">die-to-die interconnect</text>
+  <text x="440" y="174" class="lbl2" text-anchor="middle">software-transparent, unified HBM</text>
+
+  <rect x="40" y="96" width="280" height="198" rx="6" fill="#0a2a20" stroke="#3f9c72" stroke-width="1.5"/>
+  <text x="180" y="118" class="box-lab" fill="#e6f5ee">Die 0 (GB100)</text>
+  <text x="180" y="136" class="lbl2" text-anchor="middle">8 GPC, 74 SM</text>
+  <g>
+    <rect x="56" y="148" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="85" y="168" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="122" y="148" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="151" y="168" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="188" y="148" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="217" y="168" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="254" y="148" width="50" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="279" y="168" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="56" y="186" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="85" y="206" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="122" y="186" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="151" y="206" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="188" y="186" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="217" y="206" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="254" y="186" width="50" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="279" y="206" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <text x="180" y="236" class="lbl2" text-anchor="middle">8 GPC/die (x2 = 16 logical partitions)</text>
+    <text x="180" y="250" class="lbl2" text-anchor="middle">74 SM/die, 4 L2 partitions/die</text>
+    <text x="180" y="264" class="lbl2" text-anchor="middle">TMEM 256 KB/SM, 5th-gen TC</text>
+  </g>
+
+  <rect x="560" y="96" width="280" height="198" rx="6" fill="#0a2a20" stroke="#3f9c72" stroke-width="1.5"/>
+  <text x="700" y="118" class="box-lab" fill="#e6f5ee">Die 1 (GB100)</text>
+  <text x="700" y="136" class="lbl2" text-anchor="middle">8 GPC, 74 SM</text>
+  <g>
+    <rect x="576" y="148" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="605" y="168" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="642" y="148" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="671" y="168" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="708" y="148" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="737" y="168" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="774" y="148" width="50" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="799" y="168" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="576" y="186" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="605" y="206" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="642" y="186" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="671" y="206" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="708" y="186" width="58" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="737" y="206" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <rect x="774" y="186" width="50" height="30" rx="4" fill="url(#gpc)" stroke="#55b184"/><text x="799" y="206" class="lbl2" text-anchor="middle" fill="#fff">GPC</text>
+    <text x="700" y="236" class="lbl2" text-anchor="middle">unified HBM3e 192 GB</text>
+    <text x="700" y="250" class="lbl2" text-anchor="middle">8 TB/s bandwidth, 126 MB L2</text>
+    <text x="700" y="264" class="lbl2" text-anchor="middle">NVLink 5.0: 1.8 TB/s</text>
+  </g>
+
+  <text x="20" y="362" class="title">Blackwell SM internals: TMEM (Tensor Memory) + 5th-gen Tensor Core</text>
+  <text x="20" y="380" class="sub">Key changes vs Hopper: accumulator moved to TMEM; FP4/FP6; tcgen05 async; CTA Pair for cross-SM operand sharing.</text>
+
+  <rect x="20" y="394" width="840" height="334" rx="8" fill="url(#sm)" stroke="#4fc08a" stroke-width="1.5"/>
+  <text x="440" y="418" class="box-lab" fill="#fff">Streaming Multiprocessor (SM) - Blackwell GB100</text>
+
+  <g transform="translate(40,434)">
+    <rect x="0" y="0" width="190" height="180" rx="6" fill="#0f2b22" stroke="#2f9c72"/>
+    <text x="95" y="20" class="lbl" text-anchor="middle">Partition 0</text>
+    <rect x="12" y="30" width="54" height="26" rx="3" fill="#5bc98c"/><text x="39" y="47" class="lbl2" text-anchor="middle" fill="#062">FP32x32</text>
+    <rect x="70" y="30" width="54" height="26" rx="3" fill="#5bc98c"/><text x="97" y="47" class="lbl2" text-anchor="middle" fill="#062">INT32x16</text>
+    <rect x="128" y="30" width="54" height="26" rx="3" fill="#e74c8b"/><text x="155" y="47" class="lbl2" text-anchor="middle" fill="#fff">TC5x1</text>
+    <rect x="12" y="62" width="54" height="26" rx="3" fill="#7f7fb0"/><text x="39" y="79" class="lbl2" text-anchor="middle" fill="#fff">FP64x16</text>
+    <rect x="70" y="62" width="54" height="26" rx="3" fill="#4aa3e0"/><text x="97" y="79" class="lbl2" text-anchor="middle" fill="#fff">LD/ST</text>
+    <rect x="128" y="62" width="54" height="26" rx="3" fill="#c881c8"/><text x="155" y="79" class="lbl2" text-anchor="middle" fill="#411">SFU</text>
+    <rect x="12" y="94" width="170" height="24" rx="3" fill="#274e6b"/><text x="97" y="110" class="lbl2" text-anchor="middle">Warp Scheduler + Dispatch</text>
+    <rect x="12" y="124" width="170" height="46" rx="3" fill="#3a2f4d"/><text x="97" y="140" class="lbl2" text-anchor="middle" fill="#fff">Register File 64 KB</text><text x="97" y="154" class="lbl2" text-anchor="middle" fill="#fff">(accumulators not here)</text>
+  </g>
+  <g transform="translate(240,434)">
+    <rect x="0" y="0" width="190" height="180" rx="6" fill="#0f2b22" stroke="#2f9c72"/>
+    <text x="95" y="20" class="lbl" text-anchor="middle">Partition 1</text>
+    <rect x="12" y="30" width="54" height="26" rx="3" fill="#5bc98c"/><text x="39" y="47" class="lbl2" text-anchor="middle" fill="#062">FP32x32</text>
+    <rect x="70" y="30" width="54" height="26" rx="3" fill="#5bc98c"/><text x="97" y="47" class="lbl2" text-anchor="middle" fill="#062">INT32x16</text>
+    <rect x="128" y="30" width="54" height="26" rx="3" fill="#e74c8b"/><text x="155" y="47" class="lbl2" text-anchor="middle" fill="#fff">TC5x1</text>
+    <rect x="12" y="62" width="54" height="26" rx="3" fill="#7f7fb0"/><text x="39" y="79" class="lbl2" text-anchor="middle" fill="#fff">FP64x16</text>
+    <rect x="70" y="62" width="54" height="26" rx="3" fill="#4aa3e0"/><text x="97" y="79" class="lbl2" text-anchor="middle" fill="#fff">LD/ST</text>
+    <rect x="128" y="62" width="54" height="26" rx="3" fill="#c881c8"/><text x="155" y="79" class="lbl2" text-anchor="middle" fill="#411">SFU</text>
+    <rect x="12" y="94" width="170" height="24" rx="3" fill="#274e6b"/><text x="97" y="110" class="lbl2" text-anchor="middle">Warp Scheduler + Dispatch</text>
+    <rect x="12" y="124" width="170" height="46" rx="3" fill="#3a2f4d"/><text x="97" y="140" class="lbl2" text-anchor="middle" fill="#fff">Register File 64 KB</text><text x="97" y="154" class="lbl2" text-anchor="middle" fill="#fff">(accumulators not here)</text>
+  </g>
+  <g transform="translate(440,434)">
+    <rect x="0" y="0" width="190" height="180" rx="6" fill="#0f2b22" stroke="#2f9c72"/>
+    <text x="95" y="20" class="lbl" text-anchor="middle">Partition 2</text>
+    <rect x="12" y="30" width="54" height="26" rx="3" fill="#5bc98c"/><text x="39" y="47" class="lbl2" text-anchor="middle" fill="#062">FP32x32</text>
+    <rect x="70" y="30" width="54" height="26" rx="3" fill="#5bc98c"/><text x="97" y="47" class="lbl2" text-anchor="middle" fill="#062">INT32x16</text>
+    <rect x="128" y="30" width="54" height="26" rx="3" fill="#e74c8b"/><text x="155" y="47" class="lbl2" text-anchor="middle" fill="#fff">TC5x1</text>
+    <rect x="12" y="62" width="54" height="26" rx="3" fill="#7f7fb0"/><text x="39" y="79" class="lbl2" text-anchor="middle" fill="#fff">FP64x16</text>
+    <rect x="70" y="62" width="54" height="26" rx="3" fill="#4aa3e0"/><text x="97" y="79" class="lbl2" text-anchor="middle" fill="#fff">LD/ST</text>
+    <rect x="128" y="62" width="54" height="26" rx="3" fill="#c881c8"/><text x="155" y="79" class="lbl2" text-anchor="middle" fill="#411">SFU</text>
+    <rect x="12" y="94" width="170" height="24" rx="3" fill="#274e6b"/><text x="97" y="110" class="lbl2" text-anchor="middle">Warp Scheduler + Dispatch</text>
+    <rect x="12" y="124" width="170" height="46" rx="3" fill="#3a2f4d"/><text x="97" y="140" class="lbl2" text-anchor="middle" fill="#fff">Register File 64 KB</text><text x="97" y="154" class="lbl2" text-anchor="middle" fill="#fff">(accumulators not here)</text>
+  </g>
+  <g transform="translate(640,434)">
+    <rect x="0" y="0" width="190" height="180" rx="6" fill="#0f2b22" stroke="#2f9c72"/>
+    <text x="95" y="20" class="lbl" text-anchor="middle">Partition 3</text>
+    <rect x="12" y="30" width="54" height="26" rx="3" fill="#5bc98c"/><text x="39" y="47" class="lbl2" text-anchor="middle" fill="#062">FP32x32</text>
+    <rect x="70" y="30" width="54" height="26" rx="3" fill="#5bc98c"/><text x="97" y="47" class="lbl2" text-anchor="middle" fill="#062">INT32x16</text>
+    <rect x="128" y="30" width="54" height="26" rx="3" fill="#e74c8b"/><text x="155" y="47" class="lbl2" text-anchor="middle" fill="#fff">TC5x1</text>
+    <rect x="12" y="62" width="54" height="26" rx="3" fill="#7f7fb0"/><text x="39" y="79" class="lbl2" text-anchor="middle" fill="#fff">FP64x16</text>
+    <rect x="70" y="62" width="54" height="26" rx="3" fill="#4aa3e0"/><text x="97" y="79" class="lbl2" text-anchor="middle" fill="#fff">LD/ST</text>
+    <rect x="128" y="62" width="54" height="26" rx="3" fill="#c881c8"/><text x="155" y="79" class="lbl2" text-anchor="middle" fill="#411">SFU</text>
+    <rect x="12" y="94" width="170" height="24" rx="3" fill="#274e6b"/><text x="97" y="110" class="lbl2" text-anchor="middle">Warp Scheduler + Dispatch</text>
+    <rect x="12" y="124" width="170" height="46" rx="3" fill="#3a2f4d"/><text x="97" y="140" class="lbl2" text-anchor="middle" fill="#fff">Register File 64 KB</text><text x="97" y="154" class="lbl2" text-anchor="middle" fill="#fff">(accumulators not here)</text>
+  </g>
+
+  <g transform="translate(40,624)">
+    <rect x="0" y="0" width="790" height="86" rx="6" fill="#3a2f4d" stroke="#4fc08a" stroke-width="1.5"/>
+    <text x="20" y="22" class="lbl" fill="#fff">SM-level shared (Blackwell adds TMEM / CTA Pair):</text>
+    <rect x="20" y="32" width="180" height="42" rx="4" fill="#5a4a80"/><text x="110" y="50" class="lbl2" text-anchor="middle" fill="#fff">L1 + Shared Memory</text><text x="110" y="64" class="lbl2" text-anchor="middle" fill="#fff">256 KB unified SRAM</text>
+    <rect x="212" y="32" width="180" height="42" rx="4" fill="#7a3b5e"/><text x="302" y="50" class="lbl2" text-anchor="middle" fill="#fff">TMEM 256 KB/SM</text><text x="302" y="64" class="lbl2" text-anchor="middle" fill="#fff">128 Lane x 512 col, accumulator</text>
+    <rect x="404" y="32" width="180" height="42" rx="4" fill="#7a3b5e"/><text x="494" y="50" class="lbl2" text-anchor="middle" fill="#fff">tcgen05 instruction family</text><text x="494" y="64" class="lbl2" text-anchor="middle" fill="#fff">alloc/mma/ld/st/commit</text>
+    <rect x="596" y="32" width="180" height="42" rx="4" fill="#6f2d5a"/><text x="686" y="50" class="lbl2" text-anchor="middle" fill="#fff">CTA Pair (within TPC)</text><text x="686" y="64" class="lbl2" text-anchor="middle" fill="#fff">2 SMs share TC operands</text>
+  </g>
+
+  <text x="20" y="744" class="sub">Note: B200 SM has 4 partitions, 4x 5th-gen Tensor Cores and a dedicated TMEM (128 Lane x 512 col x 32-bit ~= 256 KB) as accumulator storage.</text>
+</svg>

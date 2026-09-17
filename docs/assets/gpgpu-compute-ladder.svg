@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 560" font-family="Segoe UI, Arial, sans-serif">
+  <style>
+    .title{font-size:19px;font-weight:700;fill:#e8eef5}
+    .sub{font-size:11px;fill:#9fb3c8}
+    .axis{font-size:10px;fill:#7f93a8}
+    .rowlab{font-size:12px;font-weight:600;fill:#dfe7ef}
+    .val{font-size:9px;fill:#0f1a2e;font-weight:700}
+    .legend{font-size:11px;fill:#c8d4e0}
+    .note{font-size:9px;fill:#8fa3b8}
+  </style>
+  <rect x="0" y="0" width="900" height="560" rx="8" fill="#0f1a2e"/>
+  <text x="20" y="28" class="title">A100 / H100 / B200 Dense Compute Ladder (log scale; TFLOPS, INT8 in TOPS)</text>
+  <text x="20" y="45" class="sub">Each generation doubles Tensor Core FMA/clock (about 2x); precision drop (TF32 to FP8 to FP4) adds another 2x per step.</text>
+
+  <g stroke="#1c2c45" stroke-width="1">
+    <line x1="130" y1="58" x2="130" y2="540"/>
+    <line x1="200" y1="58" x2="200" y2="540"/><line x1="270" y1="58" x2="270" y2="540"/>
+    <line x1="340" y1="58" x2="340" y2="540"/><line x1="410" y1="58" x2="410" y2="540"/>
+    <line x1="480" y1="58" x2="480" y2="540"/><line x1="550" y1="58" x2="550" y2="540"/>
+    <line x1="620" y1="58" x2="620" y2="540"/><line x1="690" y1="58" x2="690" y2="540"/>
+    <line x1="760" y1="58" x2="760" y2="540"/><line x1="830" y1="58" x2="830" y2="540"/>
+  </g>
+  <g class="axis" text-anchor="middle">
+    <text x="130" y="552">10</text>
+    <text x="200" y="552">20</text>
+    <text x="270" y="552">40</text>
+    <text x="340" y="552">80</text>
+    <text x="410" y="552">160</text>
+    <text x="480" y="552">320</text>
+    <text x="550" y="552">640</text>
+    <text x="620" y="552">1280</text>
+    <text x="690" y="552">2560</text>
+    <text x="760" y="552">5120</text>
+    <text x="830" y="552">10000</text>
+  </g>
+
+  <text x="16" y="116" class="rowlab" text-anchor="end">FP64</text>
+  <rect x="130" y="70" width="68" height="16" rx="3" fill="#f0a24a"/><text x="203" y="82" class="val">19.5 A100</text>
+  <rect x="130" y="92" width="193" height="16" rx="3" fill="#9b59b6"/><text x="328" y="104" class="val">66.9 H100-TC</text>
+  <rect x="130" y="114" width="141" height="16" rx="3" fill="#23a06b"/><text x="276" y="126" class="val">40 B200-V</text>
+
+  <text x="16" y="196" class="rowlab" text-anchor="end">TF32</text>
+  <rect x="130" y="150" width="278" height="16" rx="3" fill="#f0a24a"/><text x="413" y="162" class="val">156</text>
+  <rect x="130" y="172" width="395" height="16" rx="3" fill="#9b59b6"/><text x="530" y="184" class="val">494.7</text>
+  <rect x="130" y="194" width="479" height="16" rx="3" fill="#23a06b"/><text x="614" y="206" class="val">1125</text>
+
+  <text x="16" y="276" class="rowlab" text-anchor="end">FP16/BF16</text>
+  <rect x="130" y="230" width="349" height="16" rx="3" fill="#f0a24a"/><text x="484" y="242" class="val">312</text>
+  <rect x="130" y="252" width="466" height="16" rx="3" fill="#9b59b6"/><text x="601" y="264" class="val">989.4</text>
+  <rect x="130" y="274" width="549" height="16" rx="3" fill="#23a06b"/><text x="684" y="286" class="val">2250</text>
+
+  <text x="16" y="356" class="rowlab" text-anchor="end">FP8</text>
+  <text x="128" y="322" class="axis" text-anchor="end">A100: none</text>
+  <rect x="130" y="332" width="536" height="16" rx="3" fill="#9b59b6"/><text x="671" y="344" class="val">1978.9</text>
+  <rect x="130" y="354" width="619" height="16" rx="3" fill="#23a06b"/><text x="754" y="366" class="val">4500</text>
+
+  <text x="16" y="436" class="rowlab" text-anchor="end">FP4</text>
+  <text x="128" y="402" class="axis" text-anchor="end">A100/H100: none</text>
+  <rect x="130" y="434" width="689" height="16" rx="3" fill="#23a06b"/><text x="824" y="446" class="val">9000</text>
+
+  <text x="16" y="516" class="rowlab" text-anchor="end">INT8</text>
+  <rect x="130" y="470" width="419" height="16" rx="3" fill="#f0a24a"/><text x="554" y="482" class="val">624</text>
+  <rect x="130" y="492" width="536" height="16" rx="3" fill="#9b59b6"/><text x="671" y="504" class="val">1978.9</text>
+  <rect x="130" y="514" width="619" height="16" rx="3" fill="#23a06b"/><text x="754" y="526" class="val">4500</text>
+
+  <g transform="translate(20,535)">
+    <rect x="0" y="0" width="12" height="12" rx="3" fill="#f0a24a"/><text x="17" y="10" class="legend">A100</text>
+    <rect x="70" y="0" width="12" height="12" rx="3" fill="#9b59b6"/><text x="87" y="10" class="legend">H100</text>
+    <rect x="140" y="0" width="12" height="12" rx="3" fill="#23a06b"/><text x="157" y="10" class="legend">B200</text>
+  </g>
+  <text x="760" y="545" class="note" text-anchor="end">FP64: B200 has no FP64 Tensor path (40 is vector FP64; H100's 66.9 is Tensor FP64)</text>
+</svg>

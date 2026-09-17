@@ -317,3 +317,21 @@ Roofline 模型的价值在于：**它告诉你在优化一个 kernel 之前，�
 - 给定一个计算任务，怎么用 Roofline 判断它的瓶颈在哪、该往哪个方向优化？
 
 带着这些直觉，我们才能进入第二部分——看软件（CUDA 编程模型）究竟是如何精确地映射到这套硬件之上的。
+
+---
+
+### 1.7 逐型号硬件结构详解（扩展篇）
+
+本章 1.2 节给出的是**跨代通用的**硬件组织图（GPC/TPC/SM 的抽象结构对所有架构都成立）。但每一代旗舰芯片的具体差异——SM 内部到底有几个 FP32 core、Tensor Core 每时钟做几次 MAC、寄存器堆和 L2 有多大、算力峰值怎么从"单元数 × 频率"精确算出来——需要单开手册逐型号展开。
+
+为此本部分配套了「逐型号 GPGPU 硬件结构」子系列，**每个型号单开一个 MD**，固定回答四个问题：**硬件长什么样（含拓扑图）→ 相比上一代改了什么、为什么这样改 → 每种数据类型的算力峰值 → 用硬件单元数 × 频率的公式一步步推出来并标注来源**：
+
+| 型号 | 架构 | 手册 | 核心看点 |
+|---|---|---|---|
+| A100 | Ampere | [`part01x-gpgpu/01-ampere-a100.md`](./part01x-gpgpu/01-ampere-a100.md) | 第 3 代 Tensor Core、TF32/BF16、`cp.async`、2:4 稀疏、FP16 峰值 312 TFLOPS 的推导 |
+| H100 | Hopper | [`part01x-gpgpu/02-hopper-h100.md`](./part01x-gpgpu/02-hopper-h100.md) | **重点：相对 A100 的改进**——TMA/WGMMA/Cluster、FP32 通路翻倍、FP8、FP16 峰值 989 TFLOPS |
+| B200 | Blackwell | [`part01x-gpgpu/03-blackwell-b200.md`](./part01x-gpgpu/03-blackwell-b200.md) | **重点：相对 H100 的改进**——TMEM、双 Die、`tcgen05`、FP4、FP4 峰值 9000 TFLOPS |
+
+配套的[算力梯度对比图](./assets/gpgpu-compute-ladder.svg)把三代在所有数据类型下的稠密/稀疏峰值放在同一张对数坐标图上，一眼看清"每代 Tensor Core 每时钟 FMA 翻倍"这条主线。
+
+**建议读法**：先通读本章 1.2 节的抽象结构，再按 [Ampere → Hopper → Blackwell 的路线图](./roadmap-ampere-hopper-blackwell.md) 依次读上面三份型号手册——因为后者刻意把每一代"相比上一代改了什么、为什么改"作为主线，能把 1.2 节里那些泛泛而谈的"现代架构通常…"落到具体的 108→132→148 SM、64→128→128 FP32/SM、40→50→126 MB L2 这些确凿数字上。

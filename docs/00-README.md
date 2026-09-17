@@ -118,6 +118,9 @@ Vector Add → Reduce → Scan → Transpose → GEMM → LayerNorm → Softmax 
 **核心问题：谁在等待、数据何时可见、异步硬件何时完成？**
 不按 CUDA API 分类，而按 Hardware Synchronization Primitive 组织：CTA/Warp/Cluster/Grid execution barrier、`fence`/acquire/release/proxy fence、`cp.async`/TMA/`mbarrier`、`mma.sync`/WGMMA/`tcgen05` completion、collective 和 atomic。每项均给出 CUDA → PTX → 典型 SASS、作用域、等待与可见性语义，并明确数据中心 Blackwell 与 `sm_120` 消费级路径的差异。
 
+### 附录 A · GPGPU 术语表（通用 + NVIDIA）—— [`appendix-glossary.md`](./appendix-glossary.md)
+**速查用途的术语表，不是教材。** 分两部分：**GPGPU 业内通用术语**（并行计算、算力度量、存储层次、性能分析，跨厂商通用）与 **NVIDIA GPGPU 专属术语**（硬件架构 SM/GPC/TPC、执行模型 Warp/CTA/Cluster、算力单元 Tensor Core/MMA、存储互联 HBM/NVLink/TMEM、数据格式 FP64→FP4/NVFP4、软件栈 CUDA→PTX→SASS、代际特性 `cp.async`/TMA/WGMMA/`tcgen05`、工具生态 Nsight/CUTLASS/CuTe）。每个词条一句话讲清"是什么 + 为什么需要认识它"，并标注跳转到对应 Part。
+
 ## 使用建议
 
 配套 CUDA 实验统一放在仓库根目录 `src/`，按文档 Part 和章节编号组织。当前可跑套件包括：[Part 09 SASS / FFMA 探针](../src/part09-sass/README.md)、Part 13 四维同步：[总览](../src/part13-synchronization-handbook/README.md)、[13.1 Execution Barrier](../src/part13-synchronization-handbook/01-execution-barriers/README.md)、[13.2 Memory Ordering](../src/part13-synchronization-handbook/02-memory-ordering/README.md)、[13.3 Async Pipeline](../src/part13-synchronization-handbook/03-async-pipelines/README.md)、[13.4 Tensor](../src/part13-synchronization-handbook/04-tensor-synchronization/README.md)、[13.5 Collectives/Atomics](../src/part13-synchronization-handbook/05-collectives-and-atomics/README.md)。每个 case 可生成 executable、PTX、CUBIN 与 SASS。
@@ -155,5 +158,6 @@ Vector Add → Reduce → Scan → Transpose → GEMM → LayerNorm → Softmax 
 |---|---|
 | `00-README.md` | 索引/总览 |
 | `part01` ~ `part13` | 共 13 个部分；Part 5 含 Tensor Core 指令与编程手册，Part 13 为同步手册 |
+| `appendix-glossary.md` | 附录 A：GPGPU 术语表（通用 + NVIDIA） |
 
 如果你发现某一部分在深度、代码示例、某个具体架构细节上还想继续加深（例如某个 PTX 指令的完整语法、某个 CUTLASS 模板的逐行解读），可以直接告诉我要扩写哪一部分，我会在对应文件里继续补充，而不需要重新生成整份教程。
