@@ -1,0 +1,40 @@
+# 统一换行符策略：仓库内一律 LF，避免 Windows 上 LF/CRLF 警告与无谓 diff
+# 规则：文本文件自动识别，仓库中存 LF；Markdown / SVG / 代码 / 脚本强制 LF（现代编辑器均支持）
+
+# 默认：让 Git 自动判断是否为文本文件，仓库内统一 LF
+* text=auto eol=lf
+
+# 文档与绘图
+*.md        text eol=lf
+*.svg       text eol=lf
+*.tex       text eol=lf
+
+# 代码与配置
+*.cu        text eol=lf
+*.cuh       text eol=lf
+*.c         text eol=lf
+*.h         text eol=lf
+*.cpp       text eol=lf
+*.hpp       text eol=lf
+*.py        text eol=lf
+*.sh        text eol=lf
+*.json      text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.toml      text eol=lf
+
+# Windows 专用脚本保留 CRLF（cmd/powershell 兼容性）
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+*.ps1       text eol=crlf
+
+# 二进制文件：不做任何换行转换
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.webp      binary
+*.ico       binary
+*.pdf       binary
+*.zip       binary
+*.gz        binary
