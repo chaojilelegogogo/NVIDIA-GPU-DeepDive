@@ -11,7 +11,7 @@
 |---|---|---|---|
 | **卷一** [vol1-gpu-hardware/](vol1-gpu-hardware/) | GPU 硬件与体系结构 | Part 1~3 + 型号手册（A100/H100/B200）+ roadmap | ✅ 初稿完成 |
 | **卷二** [vol2-cuda-software/](vol2-cuda-software/) | CUDA 软件栈与 Kernel 工程 | Part 4~13 | ✅ 初稿完成 |
-| **卷三** [vol3-interconnect-communication/](vol3-interconnect-communication/) | 互联与通信（NVIDIA 生态为主） | Part 14 互联硬件 / Part 15 集合通信 | Part 15 ✅ 初稿；Part 14 🚧 骨架 |
+| **卷三** [vol3-interconnect-communication/](vol3-interconnect-communication/) | 互联与通信（NVIDIA 生态为主） | Part 14 互联硬件 / Part 15 集合通信 | ✅ 初稿完成 |
 | **卷四** [vol4-distributed-training/](vol4-distributed-training/) | 分布式训练系统 | Part 16 并行策略 / Part 17 框架实现 | 🚧 骨架 |
 | **卷五** [vol5-ai-compilers/](vol5-ai-compilers/) | AI 编译器 | Part 18 Triton / torch.compile / MLIR-XLA | 🚧 骨架 |
 | **卷六** [vol6-inference-systems/](vol6-inference-systems/) | 推理系统 | Part 19 KV Cache / 量化 / 推理引擎 | 🚧 骨架 |
@@ -156,7 +156,7 @@ Vector Add → Reduce → Scan → Transpose → GEMM → LayerNorm → Softmax 
 **核心问题：谁在等待、数据何时可见、异步硬件何时完成？**
 不按 CUDA API 分类，而按 Hardware Synchronization Primitive 组织：CTA/Warp/Cluster/Grid execution barrier、`fence`/acquire/release/proxy fence、`cp.async`/TMA/`mbarrier`、`mma.sync`/WGMMA/`tcgen05` completion、collective 和 atomic。每项均给出 CUDA → PTX → 典型 SASS、作用域、等待与可见性语义，并明确数据中心 Blackwell 与 `sm_120` 消费级路径的差异。
 
-### 卷三 · 互联与通信（NVIDIA 生态为主）—— [`vol3-interconnect-communication/`](vol3-interconnect-communication/)（Part 14 🚧 骨架 / Part 15 ✅ 初稿完成）
+### 卷三 · 互联与通信（NVIDIA 生态为主）—— [`vol3-interconnect-communication/`](vol3-interconnect-communication/) ✅ 初稿完成
 
 ### 第十四部分 · 互联硬件 —— [`part14-interconnect-hardware/`](vol3-interconnect-communication/part14-interconnect-hardware/)
 **核心问题：从一颗 GPU 到一万颗 GPU，数据走的是什么物理通路？**
@@ -235,7 +235,7 @@ Vector Add → Reduce → Scan → Transpose → GEMM → LayerNorm → Softmax 
 | `00-README.md` | 索引/总览（多卷导航） |
 | `vol1-gpu-hardware/` | 卷一：Part 1~3 + 型号手册 + roadmap，✅ 初稿完成 |
 | `vol2-cuda-software/` | 卷二：Part 4~13，✅ 初稿完成 |
-| `vol3` ~ `vol7`（part14~20） | 卷三~卷七：互联通信 / 分布式训练 / AI 编译器 / 推理系统 / 模型算子视角；Part 15 ✅，其余 🚧 骨架 |
+| `vol3` ~ `vol7`（part14~20） | 卷三 ✅（Part 14/15）；卷四~卷七 🚧 骨架：分布式训练 / AI 编译器 / 推理系统 / 模型算子视角 |
 | `appendix-glossary.md` | 附录 A：GPGPU 术语表（通用 + NVIDIA，已含通信与分布式分组；推理分组待扩） |
 
 如果你发现某一部分在深度、代码示例、某个具体架构细节上还想继续加深（例如某个 PTX 指令的完整语法、某个 CUTLASS 模板的逐行解读），可以直接告诉我要扩写哪一部分，我会在对应文件里继续补充，而不需要重新生成整份教程。
