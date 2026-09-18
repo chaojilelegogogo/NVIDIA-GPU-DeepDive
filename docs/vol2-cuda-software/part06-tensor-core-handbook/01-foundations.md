@@ -1,6 +1,6 @@
-# 5.1 Part 0：Tensor Core 前的基础
+# 6.1 Part 00：Tensor Core 前的基础
 
-## 5.1.1 GPU 怎样执行你的 kernel
+## 6.1.1 GPU 怎样执行你的 kernel
 
 CUDA 线程按连续 32 个组成一个 Warp。SM scheduler 每个周期从“就绪 Warp”中选择一个发射指令；Warp 内每条 lane 执行相同指令但处理不同数据。寄存器是每线程私有的最快存储，Shared Memory 是一个 CTA 共用的片上 SRAM，L2/HBM 保存全局数据。
 
@@ -18,7 +18,7 @@ Registers / TMEM → Epilogue → Global Memory
 
 Tensor Core 的意义并非让单线程更快，而是让一个协作线程集合以一条指令驱动专用矩阵乘加阵列。
 
-## 5.1.2 从 GEMM 到 tile
+## 6.1.2 从 GEMM 到 tile
 
 GEMM 的数学形式：
 
@@ -37,7 +37,7 @@ C[m, n] = Σk A[m, k] × B[k, n] + C[m, n]
 
 每次从 Global Memory 搬入 A/B tile 后，多个输出元素复用同一份输入。复用越高，越可能让 Tensor Core 持续工作；但 tile 更大也会消耗更多 Shared Memory、寄存器/TMEM 并要求更复杂的 pipeline。
 
-## 5.1.3 三类 tile 不要混淆
+## 6.1.3 三类 tile 不要混淆
 
 | 名称 | 谁决定 | 例子 | 作用 |
 |---|---|---|---|
@@ -47,7 +47,7 @@ C[m, n] = Σk A[m, k] × B[k, n] + C[m, n]
 
 `m16n8k16` 的含义是：指令将 A 的 16×16 子块和 B 的 16×8 子块相乘，累加到 16×8 的 C/D 子块。它不代表“每线程计算 16×8 个输出”；这些元素会分布在 Warp 的 lanes 和寄存器中。
 
-## 5.1.4 初学者常见误解
+## 6.1.4 初学者常见误解
 
 - **“Warp 天然同步，所以不必同步。”** Volta 起 Independent Thread Scheduling 使此假设不安全。共享数据交接应使用正确的 `__syncwarp(mask)` 或 CTA barrier。
 - **“Tensor Core 只要调用 WMMA 就会更快。”** 小矩阵、错误 layout、memory-bound kernel 或过多同步都可能更慢。

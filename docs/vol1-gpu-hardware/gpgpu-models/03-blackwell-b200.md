@@ -4,7 +4,7 @@
 >
 > 约定：本章**不出现 CUDA 代码**，只讲硬件结构、硬件 Feature，以及「算力从哪来」的推导。**重点回答一个问题：B200 相比 H100 改了什么、为什么这样改。**
 >
-> ⚠️ 范围澄清：本章指的是 **数据中心 Blackwell（B100/B200，`sm_100a`）**。消费级 GeForce RTX 50 系列（`sm_120`）是另一颗设计差异很大的芯片，**没有** TMEM、CTA Pair 和 `tcgen05`，不要混为一谈（详见 Part 5 §5.6）。
+> ⚠️ 范围澄清：本章指的是 **数据中心 Blackwell（B100/B200，`sm_100a`）**。消费级 GeForce RTX 50 系列（`sm_120`）是另一颗设计差异很大的芯片，**没有** TMEM、CTA Pair 和 `tcgen05`，不要混为一谈（详见 Part 6 §6.6）。
 
 ## 0. 定位：B200 的三个"第一次"
 
@@ -57,7 +57,7 @@ B200（GB100）发布于 2024 年，是 Blackwell 架构的数据中心旗舰。
 
 | 格式 | A100 FMA/SM/时钟 | H100 FMA/SM/时钟 | B200 MAC/SM/时钟 |
 |---|---|---|---|
-| FP64（Tensor）| 64 | 128 | —（见 §2.3）|
+| FP64（Tensor）| 64 | 128 | —（见 §4.3）|
 | TF32 | 512 | 1024 | 2048 |
 | FP16 / BF16 | 1024 | 2048 | **4096** |
 | FP8 | — | 4096 | **8192** |
@@ -68,7 +68,7 @@ B200（GB100）发布于 2024 年，是 Blackwell 架构的数据中心旗舰。
 
 ### 2.2 TMEM（Tensor Memory）：累加器搬出寄存器堆
 
-这是 Blackwell 最标志性的新增。回顾 H100 手册 §2.4 埋下的伏笔：**寄存器堆从 Kepler 起就是 256 KB/SM，十年没变**，而 WGMMA 的 tile 越来越大、累加器越来越占地方。Blackwell 的解法不是把寄存器堆做大（那样要动所有访存端口），而是**给 Tensor Core 单独配一块存储**：
+这是 Blackwell 最标志性的新增。回顾 H100 手册 §4.4 埋下的伏笔：**寄存器堆从 Kepler 起就是 256 KB/SM，十年没变**，而 WGMMA 的 tile 越来越大、累加器越来越占地方。Blackwell 的解法不是把寄存器堆做大（那样要动所有访存端口），而是**给 Tensor Core 单独配一块存储**：
 
 | TMEM 属性 | 数值 |
 |---|---|
@@ -86,11 +86,11 @@ B200（GB100）发布于 2024 年，是 Blackwell 架构的数据中心旗舰。
 
 Chips and Cheese 实测发现一个反直觉的细节：**B200 的矢量化 FP16 不再像 H100 那样享受"2× FP32"的 packed 速率**（FP16 非 Tensor 吞吐 = FP32 非 Tensor 吞吐）。原因是 NVIDIA 判断 FP16 已经主要由 Tensor Core 完成，于是砍掉了矢量路径上的 packed-FP16 加速，把晶体管省下来给更宽的 Tensor Core。这是"通用性让位于领域专用"的又一次体现。
 
-同样地，`tcgen05.mma` **不支持 FP64**（官方 PTX 文档列出的精度只有 tf32/f16/bf16/i8/u8/f4/f6/f8）——FP64 的 GEMM 走的是"翻倍的 FP64 矢量 ALU"这条独立路径（见 §4.1）。所以 B200 的 40 TFLOPS FP64 本质上是**双倍的 FP64 CUDA Core**，而不是 FP64 Tensor Core。
+同样地，`tcgen05.mma` **不支持 FP64**（官方 PTX 文档列出的精度只有 tf32/f16/bf16/i8/u8/f4/f6/f8）——FP64 的 GEMM 走的是"翻倍的 FP64 矢量 ALU"这条独立路径（见 §2.1）。所以 B200 的 40 TFLOPS FP64 本质上是**双倍的 FP64 CUDA Core**，而不是 FP64 Tensor Core。
 
 ### 2.4 CTA Pair：TPC 级跨 SM 共享操作数
 
-Blackwell 允许 TPC 内相邻两个 SM 上的 CTA 结成「CTA Pair」，**共享同一份 Tensor Core 输入操作数**——一份数据被 TMA 搬进其中一个 SM 的 Shared Memory 后，通过 TPC 内专用互联直接喂给两个 SM 的 Tensor Core，不用各自重复搬运。这可以看作 H100 Cluster/DSM 思想的进一步下沉：DSM 让 Block 共享 Shared Memory 中的数据，CTA Pair 让相邻 SM 共享 Tensor Core 操作数，链路更短、延迟更低。详见 Part 4 §4.10、Part 3 §3.12。
+Blackwell 允许 TPC 内相邻两个 SM 上的 CTA 结成「CTA Pair」，**共享同一份 Tensor Core 输入操作数**——一份数据被 TMA 搬进其中一个 SM 的 Shared Memory 后，通过 TPC 内专用互联直接喂给两个 SM 的 Tensor Core，不用各自重复搬运。这可以看作 H100 Cluster/DSM 思想的进一步下沉：DSM 让 Block 共享 Shared Memory 中的数据，CTA Pair 让相邻 SM 共享 Tensor Core 操作数，链路更短、延迟更低。详见 Part 2 §2.10、Part 5 §5.12。
 
 ## 3. 新的异步流水线：tcgen05
 
@@ -104,7 +104,7 @@ B200：  TMA → Shared Memory → tcgen05.mma      → 累加进【TMEM】    �
 两个关键变化：
 
 1. **结果归宿变了**：从"发起者私有寄存器"换成"CTA 共享的 TMEM"，因此累加器不再挤占寄存器。
-2. **发起颗粒度放松了**：H100 的 `wgmma.mma_async` 必须整个 Warp Group（128 线程）集体发起（因为结果要落到发起者 Warp 的私有寄存器）；Blackwell 某些 `tcgen05.mma` 变体**单线程就能发起**（结果进 TMEM，不再受"发起者=结果拥有者"约束）。注意：这说的是**发起粒度**放松，不等于任意线程可无条件触发任意 Tensor 操作，完整边界见 Part 5 §5.6。
+2. **发起颗粒度放松了**：H100 的 `wgmma.mma_async` 必须整个 Warp Group（128 线程）集体发起（因为结果要落到发起者 Warp 的私有寄存器）；Blackwell 某些 `tcgen05.mma` 变体**单线程就能发起**（结果进 TMEM，不再受"发起者=结果拥有者"约束）。注意：这说的是**发起粒度**放松，不等于任意线程可无条件触发任意 Tensor 操作，完整边界见 Part 6 §6.6。
 
 ## 4. 算力公式：从硬件单元推导 B200 峰值
 
@@ -170,14 +170,14 @@ INT8 = 148 × 8192 × 2 × 1.8558e9 ≈ 4500 TOPS ✅
 
 | 格式 | 稠密峰值 | 稀疏(2:4) | 公式来源 |
 |---|---|---|---|
-| FP64（矢量）| 40 TFLOPS | — | §4.1（无独立 FP64 Tensor 路径）|
-| FP32（矢量）| 80 TFLOPS | — | §4.1 |
-| TF32 Tensor | 1125 TFLOPS | 2250 | §4.2 |
-| FP16 / BF16 Tensor | 2250 TFLOPS | 4500 | §4.2 |
-| FP8 Tensor | 4500 TFLOPS | 9000 | §4.2 |
-| **FP4 Tensor** | **9000 TFLOPS** | **18000** | §4.2 |
+| FP64（矢量）| 40 TFLOPS | — | §2.1（无独立 FP64 Tensor 路径）|
+| FP32（矢量）| 80 TFLOPS | — | §2.1 |
+| TF32 Tensor | 1125 TFLOPS | 2250 | §2.2 |
+| FP16 / BF16 Tensor | 2250 TFLOPS | 4500 | §2.2 |
+| FP8 Tensor | 4500 TFLOPS | 9000 | §2.2 |
+| **FP4 Tensor** | **9000 TFLOPS** | **18000** | §2.2 |
 | FP6 Tensor | ~5300 TFLOPS* | ~10600* | 实测反推（见下）|
-| INT8 Tensor | 4500 TOPS | 9000 | §4.2 |
+| INT8 Tensor | 4500 TOPS | 9000 | §2.2 |
 
 > `*` FP6（e3m2/e2m3）是 Blackwell 新增格式，NVIDIA 数据表通常把 FP8/FP6 合并列出（如 "FP8/FP6 10 PF 稀疏"）。[arXiv:2512.02189](https://arxiv.org/pdf/2512.02189) 实测 FP6 达 5134.8 TFLOPS（95.8% 峰值），即 FP6 峰值约 5300 TFLOPS，介于 FP8（4500）与 FP4（9000）之间。
 
@@ -196,7 +196,7 @@ H100 FP8 = 132 SM ×  4096 MAC × 2 × 1.83 GHz = 1978.9 TFLOPS
 \frac{148}{132}\ (\text{SM 数}) \times \frac{16384}{4096}\ (\text{每 SM MAC：FP4 精度下探}) \times \frac{1.86}{1.83}\ (\text{频率，基本不变}) \approx 1.12 \times 4 \times 1.0 \approx 4.5\times
 \]
 
-**结论：B200 相对 H100 的 4.5× 峰值，几乎全部来自"精度下探 FP8→FP4"这一个 4× 因子**，SM 数和频率的贡献微乎其微。这正是 Part 10 三条主线里「精度持续下探」主线的顶点——但代价是 FP4 需要 NVFP4 微块缩放才能保持可用精度（见 §5）。
+**结论：B200 相对 H100 的 4.5× 峰值，几乎全部来自"精度下探 FP8→FP4"这一个 4× 因子**，SM 数和频率的贡献微乎其微。这正是 Part 3 三条主线里「精度持续下探」主线的顶点——但代价是 FP4 需要 NVFP4 微块缩放才能保持可用精度（见 §5）。
 
 ## 5. B200 相对 H100 的改进总结：为什么这样改
 
@@ -247,7 +247,7 @@ AI_ridge(B200, FP4)  = 9000 TFLOPS / 8 TB/s ≈ 1125 FLOP/Byte
 | 双 Die Chiplet | ❌ | ❌ | ✅ | NV-HBI 10 TB/s |
 | NVLink | 3.0 | 4.0 | **5.0 (1.8 TB/s)** | 互联带宽翻倍 |
 
-> 关于"消费级 vs 数据中心"：上表列的 TMEM / `tcgen05` / CTA Pair **只存在于数据中心 Blackwell**（B100/B200，`sm_100a`）。RTX 50 系列（`sm_120`）没有 TMEM，低精度 MMA 走 `mma.sync.aligned.block_scale` 这条寄存器/Shared 路径，详见 Part 5 §5.6。
+> 关于"消费级 vs 数据中心"：上表列的 TMEM / `tcgen05` / CTA Pair **只存在于数据中心 Blackwell**（B100/B200，`sm_100a`）。RTX 50 系列（`sm_120`）没有 TMEM，低精度 MMA 走 `mma.sync.aligned.block_scale` 这条寄存器/Shared 路径，详见 Part 6 §6.6。
 
 ## 7. 参考资料与来源
 

@@ -1,6 +1,6 @@
-# 3.9 Hopper：Bulk Copy、TensorMap 与 TMA 使用手册
+# 5.9 Hopper：Bulk Copy、TensorMap 与 TMA 使用手册
 
-## 3.9.1 三层概念不要混在一起
+## 5.9.1 三层概念不要混在一起
 
 | 层次 | 含义 |
 |---|---|
@@ -10,7 +10,7 @@
 
 日常说“TMA”时常把后两类都包括进去，但读 PTX 时必须按准确指令区分。
 
-## 3.9.2 线性 `cp.async.bulk`
+## 5.9.2 线性 `cp.async.bulk`
 
 概念语法：
 
@@ -36,7 +36,7 @@ cp.async.bulk.wait_group 0;
 
 Hopper 还支持 CTA shared 与 cluster shared 之间的 bulk copy。remote destination 必须属于 cluster 内合法 peer CTA，生命周期和 cluster synchronization 另行保证。
 
-## 3.9.3 为什么需要 TensorMap
+## 5.9.3 为什么需要 TensorMap
 
 每个 tile 都不变的部分：
 
@@ -63,7 +63,7 @@ uint32_t elem_stride[2] = {1, 1};
 
 把 `{height, width}` 直接照抄进去是最常见错误之一。
 
-## 3.9.4 Host：编码一个 2D tiled TensorMap
+## 5.9.4 Host：编码一个 2D tiled TensorMap
 
 ```cpp
 #include <cuda.h>
@@ -107,7 +107,7 @@ CUtensorMap make_map(float* base,
 
 `CUtensorMap` 要求 128B alignment 支持。推荐按值作为 `const __grid_constant__` kernel 参数，也可放 constant/global memory；若 descriptor 在 device 上被修改，要处理 tensormap proxy fence。
 
-## 3.9.5 Device：2D global → shared → global
+## 5.9.5 Device：2D global → shared → global
 
 下面采用 CUDA Programming Guide 的 experimental PTX wrapper；接口名可能随 Toolkit 调整：
 
@@ -162,7 +162,7 @@ __global__ void tma_roundtrip(
 
 `wait_group_read<0>` 的重点是：TMA 已读完 shared source，buffer 才能安全覆盖；global store 对其它观察者何时可见还需上层 kernel/stream/memory-order 协议。
 
-## 3.9.6 对应 PTX
+## 5.9.6 对应 PTX
 
 ```ptx
 cp.async.bulk.tensor.2d.shared::cta.global.tile
@@ -177,7 +177,7 @@ cp.async.bulk.wait_group.read 0;
 
 语法中 qualifier 的准确顺序随 PTX 版本核对；内联 PTX 不应仅凭上述概念片段复制。
 
-## 3.9.7 mbarrier transaction：为什么同时有 arrival 与 bytes
+## 5.9.7 mbarrier transaction：为什么同时有 arrival 与 bytes
 
 ```text
 线程条件：所有参与者 arrive
@@ -197,7 +197,7 @@ cp.async.bulk.wait_group.read 0;
 
 expected bytes 写小会过早完成，写大会永久等待。多 stage 时每个 stage 通常持有独立 barrier/state，避免 phase 混乱。
 
-## 3.9.8 OOB 与尾块
+## 5.9.8 OOB 与尾块
 
 global→shared tiled TMA 允许 tile 部分越界，并按 TensorMap fill mode 填 0 或 OOB-NaN；tile 起点可为负。shared→global 时越界部分可被丢弃，但左上/起始坐标的负值受更严格限制。
 
@@ -207,7 +207,7 @@ global→shared tiled TMA 允许 tile 部分越界，并按 TensorMap fill mode 
 - 卷积 halo 可用 descriptor/mode 表达；
 - 但算法要确认 0 是否为正确中性元。
 
-## 3.9.9 TMA swizzle
+## 5.9.9 TMA swizzle
 
 配置 swizzle 后，TMA 按 swizzled layout 写 shared。消费者必须用匹配布局：
 
@@ -220,7 +220,7 @@ global row-major tile
 
 不要先让 TMA swizzle，随后用普通 `tile[row][col]` 假设数据仍线性。CUTLASS/CuTe 的 layout atom 正是在编译期保持 producer/consumer 映射一致。
 
-## 3.9.10 Cluster multicast
+## 5.9.10 Cluster multicast
 
 ```ptx
 cp.async.bulk.tensor.2d.shared::cluster.global.tile
@@ -235,7 +235,7 @@ cp.async.bulk.tensor.2d.shared::cluster.global.tile
 - 每个目标 CTA 的 shared 生命周期受保护；
 - TMA transaction 完成不自动等价于所有 CTA cluster-sync。
 
-## 3.9.11 L2 prefetch
+## 5.9.11 L2 prefetch
 
 ```ptx
 cp.async.bulk.prefetch.L2.global [src], size;
@@ -245,7 +245,7 @@ cp.async.bulk.prefetch.tensor.2d.L2.global.tile
 
 prefetch 是弱提示，没有供程序等待的“数据必在 L2”保证。应在访问规律明确、距离可调且不会污染 cache 时实测。
 
-## 3.9.12 什么时候用 CuTe/CUTLASS
+## 5.9.12 什么时候用 CuTe/CUTLASS
 
 生产 GEMM/attention 通常优先 CuTe/CUTLASS，因为它们把以下关系放进类型/layout：
 
@@ -258,6 +258,6 @@ prefetch 是弱提示，没有供程序等待的“数据必在 L2”保证。�
 
 建议先完成本章的最小 roundtrip，理解 completion 后再读框架封装；否则模板错误很难归因。
 
-mbarrier phase、transaction bytes、async proxy 与 cluster 交接的规范化解释见[第十三部分 Async Pipeline Synchronization](../part13-synchronization-handbook/03-async-pipelines.md)；WGMMA 与 TMA 的组合见[第五部分 Hopper WGMMA](../part05-tensor-core-handbook/05-hopper-wgmma.md)。
+mbarrier phase、transaction bytes、async proxy 与 cluster 交接的规范化解释见[第十三部分 Async Pipeline Synchronization](../part13-synchronization-handbook/03-async-pipelines.md)；WGMMA 与 TMA 的组合见[第六部分 Hopper WGMMA](../part06-tensor-core-handbook/05-hopper-wgmma.md)。
 
 下一篇：[Blackwell TMA 功能矩阵](06-blackwell-tma.md)。

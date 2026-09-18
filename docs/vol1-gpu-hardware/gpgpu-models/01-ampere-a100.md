@@ -38,7 +38,7 @@ GA100 完整 die 的层次结构如下（与 Part 1 §1.2 的通用结构图一�
 
 A100（数据中心 GA100）每 SM 有 **64 个 FP32 core + 64 个 INT32 core**，两者是**各自独立的通路**。注意：这个 64+64 分立布局**不同于消费级 Ampere（RTX 30 系列的 GA10x）**——后者才是那个"128 个 FP32/INT32 混合数据通路、每时钟二选一发射"的设计。GA100 数据中心芯片用的是干净的分立 64 FP32 + 64 INT32。
 
-这个区别很重要，因为它直接决定了 Hopper 的改进思路（见 H100 手册 §2.1）：**H100 把 FP32 通路直接翻倍到 128/SM**，INT32 保持 64/SM——于是"FP32 core 翻倍"这件事，在数据中心产品线上就是从 A100 的 64 → H100 的 128 的一条清晰轨迹。
+这个区别很重要，因为它直接决定了 Hopper 的改进思路（见 H100 手册 §4.1）：**H100 把 FP32 通路直接翻倍到 128/SM**，INT32 保持 64/SM——于是"FP32 core 翻倍"这件事，在数据中心产品线上就是从 A100 的 64 → H100 的 128 的一条清晰轨迹。
 
 > 具体数字：A100 每 SM = 64 FP32 + 64 INT32（各自独立 issue），数据见 [Hopper In-Depth 官方博客的 A100 对照表](https://developer.nvidia.com/blog/nvidia-hopper-architecture-in-depth/)（明确列出 A100 "FP32 Cores / SM = 64"、"INT32 Cores / SM = 64"）。6912 个 FP32 = 108 SM × 64，与官方一致。
 
@@ -68,12 +68,12 @@ SM 级共享资源：
 
 ## 3. Tensor Core（第 3 代）：矩阵乘加的专用电路
 
-Tensor Core 从 Volta 引入（第 1 代），A100 是**第 3 代**。它的本质是 Part 5 会详细讲的"固定形状矩阵 multiply-accumulate（MMA）专用电路"，这里只讲硬件 Feature：
+Tensor Core 从 Volta 引入（第 1 代），A100 是**第 3 代**。它的本质是 Part 6 会详细讲的"固定形状矩阵 multiply-accumulate（MMA）专用电路"，这里只讲硬件 Feature：
 
 1. **新增 TF32**：19-bit 的 Tensor Float 32，输入截断 FP32 的尾数（8-bit 指数 + 10-bit 尾数），用 FP32 累加。这是"训练场景零修改加速"的关键——FP32 用户几乎不用改代码，就能用 Tensor Core 拿到 8× 于 FP32 CUDA Core 的峰值。
 2. **BF16 与 FP16 同速率**：两者都是 312 TFLOPS（稠密），因为算法上都是 2-byte 输入。
 3. **2:4 结构化稀疏**：每 4 个权重里至少 2 个为 0，硬件直接跳过零，峰值翻倍（如 FP16 312→624）。这是"硬件级结构化稀疏加速"的首次大规模落地。
-4. **MMA 形状**：`m16n8k8` / `m16n8k16` 是主力的 `mma.sync` 形状（FP16），TF32 用 `m16n8k8`。细节见 Part 5 §5.4。
+4. **MMA 形状**：`m16n8k8` / `m16n8k16` 是主力的 `mma.sync` 形状（FP16），TF32 用 `m16n8k8`。细节见 Part 6 §6.4。
 
 ### 3.1 Tensor Core 每时钟 FMA：为什么是 1024/SM？
 
@@ -185,7 +185,7 @@ FP64-TC = 108 × 64 × 2 × 1.41e9 = 1.949e13 ≈ 19.5 TFLOPS ✅
 
 ### 4.3 一图总结：所有数字都能被"单元数 × 频率"解释
 
-请看文末的 [跨型号算力对比图](../../assets/gpgpu-compute-ladder.svg)，A100 那一列（橙色）的每个数字，都能用上面 §4.1/§4.2 里的公式精确复现。**记公式比记数字重要**——因为到了 Hopper/Blackwell，你只需要改动 `N_SM`、`FMA/时钟/SM`、`f_clock` 三个变量，就能自己推出官方没直接公布的数字。
+请看文末的 [跨型号算力对比图](../../assets/gpgpu-compute-ladder.svg)，A100 那一列（橙色）的每个数字，都能用上面 §2.1/§2.2 里的公式精确复现。**记公式比记数字重要**——因为到了 Hopper/Blackwell，你只需要改动 `N_SM`、`FMA/时钟/SM`、`f_clock` 三个变量，就能自己推出官方没直接公布的数字。
 
 ## 5. 访存与互联（Roofline 的另一半）
 
@@ -235,15 +235,15 @@ A100 80GB（SXM4）的两项输入：
 \text{AI}_{\text{ridge}} = \frac{\text{FP16 峰值}}{\text{带宽}} = \frac{312\ \text{TFLOPS}}{2.039\ \text{TB/s}} \approx 153\ \text{FLOP/Byte}
 \]
 
-这个数字的含义是：只有算术强度超过约 153 FLOP/Byte 的 kernel（典型如大规模 GEMM）才能触到算力屋顶；绝大多数实际 kernel（Element-wise、softmax 等）AI 远低于此，因此是 **Memory Bound**，优化重点是减少访存而非加算力。这个"算力：带宽 ≈ 153:1"的比例会在 H100（~287:1）、B200（~1125:1）一路恶化——这就是 Part 10 反复强调的「算力增长快于带宽增长」的核心矛盾。
+这个数字的含义是：只有算术强度超过约 153 FLOP/Byte 的 kernel（典型如大规模 GEMM）才能触到算力屋顶；绝大多数实际 kernel（Element-wise、softmax 等）AI 远低于此，因此是 **Memory Bound**，优化重点是减少访存而非加算力。这个"算力：带宽 ≈ 153:1"的比例会在 H100（~287:1）、B200（~1125:1）一路恶化——这就是 Part 3 反复强调的「算力增长快于带宽增长」的核心矛盾。
 
 ## 6. A100 的硬件 Feature 清单（本章关心的重点）
 
 | Feature               | 是否具备 | 一句话说明                                              |
 | --------------------- | -------- | ------------------------------------------------------- |
 | 第 3 代 Tensor Core   | ✅       | TF32/BF16/FP16/INT8/INT4 + 2:4 稀疏                     |
-| `cp.async` 异步拷贝 | ✅       | Global→SMEM 不路过寄存器（Part 3 §3.7-3.8）           |
-| `ldmatrix`          | ✅       | 为 `mma.sync` 显式搬 Shared 数据（Part 5 §5.4）      |
+| `cp.async` 异步拷贝 | ✅       | Global→SMEM 不路过寄存器（Part 5 §5.7-5.8）           |
+| `ldmatrix`          | ✅       | 为 `mma.sync` 显式搬 Shared 数据（Part 6 §6.4）      |
 | TMA（张量 DMA）       | ❌       | **Hopper 才引入**，A100 仍需 Warp 参与搬运        |
 | WGMMA / Warp Group    | ❌       | **Hopper 才引入**，A100 只有 Warp 级 `mma.sync` |
 | FP8                   | ❌       | **Hopper 才引入**                                 |

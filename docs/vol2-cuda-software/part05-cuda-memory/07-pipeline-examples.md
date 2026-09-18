@@ -1,6 +1,6 @@
-# 3.P cp.async/TMA 流水线实战：从正确到高性能
+# 5.P cp.async/TMA 流水线实战：从正确到高性能
 
-## 3.P.1 Pipeline 的三个状态
+## 5.P.1 Pipeline 的三个状态
 
 每个 stage 都应明确：
 
@@ -12,7 +12,7 @@ READY   ：copy 完成，可被 consumer 读取
 
 consumer 用完后才把 READY 释放回 EMPTY。异步 API 的本质是实现这个状态机，而不是“调用一个 async 函数就自动重叠”。
 
-## 3.P.2 非 bulk `cp.async` 双缓冲
+## 5.P.2 非 bulk `cp.async` 双缓冲
 
 概念时序：
 
@@ -51,7 +51,7 @@ bar.sync 0;            // 若 CTA 跨线程消费
 
 具体 `wait_group N` 要根据 pending group 数推导，不能机械复制 `1`。
 
-## 3.P.3 TMA 双缓冲
+## 5.P.3 TMA 双缓冲
 
 每个 stage 需要：
 
@@ -90,7 +90,7 @@ for (int k = 0; k < K_TILES; ++k) {
 
 真实高性能实现常先 issue next 再 wait/compute current，并采用独立 producer warp；顺序取决于 barrier state machine 和资源依赖。
 
-## 3.P.4 Warp specialization
+## 5.P.4 Warp specialization
 
 Hopper/Blackwell 常将 CTA warp 分工：
 
@@ -117,7 +117,7 @@ TMA 只需单线程发起，但通常保留一个 producer warp，原因是：
 - producer 可通过 `setmaxnreg` 等机制减少自身 register、让 consumer 使用更多 register；
 - 单个 lane 必须位于及时获得调度的 converged warp 中。
 
-## 3.P.5 Hopper GEMM 数据通路
+## 5.P.5 Hopper GEMM 数据通路
 
 ```text
 TMA load A/B
@@ -143,7 +143,7 @@ stage 可复用
 
 `__syncthreads()` 不能替代其中任意一个专用 completion。
 
-## 3.P.6 Blackwell GEMM 数据通路
+## 5.P.6 Blackwell GEMM 数据通路
 
 ```text
 TMA load / CTA pair load A/B
@@ -167,7 +167,7 @@ Blackwell 把 accumulator 从 register 移到 TMEM，但没有消除 TMA stage�
 - CTA pair 的两个 CTA 是否在同一 phase；
 - epilogue 读 TMEM 是否反过来堵塞主循环。
 
-## 3.P.7 TMA store buffer 何时可覆盖
+## 5.P.7 TMA store buffer 何时可覆盖
 
 TMA store 是从 shared 读取、异步写 global。producer 最关心的是“copy engine 是否已经读完 shared”：
 
@@ -180,7 +180,7 @@ cp_async_bulk_wait_group_read<0>();
 
 这不一定意味着其它 device/system observer 已按你需要的内存顺序看到 global 数据。跨 CTA producer-consumer、同 kernel 轮询 global 等场景还需要相应 release/acquire 协议。
 
-## 3.P.8 Multicast pipeline
+## 5.P.8 Multicast pipeline
 
 Cluster 中多个 CTA 共用 A tile 时：
 
@@ -201,7 +201,7 @@ Cluster 中多个 CTA 共用 A tile 时：
 
 只画一个“broadcast 箭头”而不写生命周期，通常会留下 race。
 
-## 3.P.9 Stage 数量如何选
+## 5.P.9 Stage 数量如何选
 
 近似条件：
 
@@ -225,7 +225,7 @@ stage_count × compute_time_per_tile ≥ memory_latency
 4. 同时记录 occupancy、shared bytes、register、eligible warps、memory stall；
 5. 选择端到端吞吐最优，而不是 in-flight stage 最多。
 
-## 3.P.10 尾块策略
+## 5.P.10 尾块策略
 
 | 机制 | 尾块处理 |
 |---|---|
@@ -237,7 +237,7 @@ stage_count × compute_time_per_tile ≥ memory_latency
 
 GEMM K 尾块的填充值通常为 0；max-reduction 的中性元可能是 `-inf`，不能直接使用 zero-fill 而不修正。
 
-## 3.P.11 一个可执行的学习阶梯
+## 5.P.11 一个可执行的学习阶梯
 
 1. `cp.async` vector add staging：确认生成 `LDGSTS` 类路径；
 2. `cp.async` 两 stage tiled transpose：观察 bank conflict；

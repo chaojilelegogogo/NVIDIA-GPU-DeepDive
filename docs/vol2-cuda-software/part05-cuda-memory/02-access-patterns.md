@@ -1,6 +1,6 @@
-# 3.2–3.5 访问模式：Coalescing、Transaction、Bank 与 Swizzle
+# 5.2–5.5 访问模式：Coalescing、Transaction、Bank 与 Swizzle
 
-## 3.2.1 统一视角：逻辑访问如何膨胀成物理事务
+## 5.2.1 统一视角：逻辑访问如何膨胀成物理事务
 
 程序写的是“每线程读一个元素”，硬件处理的是若干固定粒度的 sector/cache transaction。性能问题通常可写成：
 
@@ -14,7 +14,7 @@ transferred bytes（存储层真正搬运）
 
 `requested / transferred` 越低，越多带宽被浪费。不要把某个架构上的“128B transaction”当成永恒常数；不同 cache 层、指令与架构的分段方式不同，但“覆盖尽量少的对齐段”这个原则不变。
 
-## 3.2.2 Global Memory Coalescing
+## 5.2.2 Global Memory Coalescing
 
 理想模式：
 
@@ -39,7 +39,7 @@ struct Particle { float x, y, z, mass; };
 
 若 warp 只读取 `x`，AoS 访问步长为 16B；SoA 的 `x[]` 则连续。选择布局要看最常见的**同一条指令跨 lane 的地址集合**，而不是只看单个对象是否紧凑。
 
-## 3.3 Alignment
+## 5.3 Alignment
 
 跨越边界的连续区域可能被拆成更多事务。检查三层对齐：
 
@@ -49,7 +49,7 @@ struct Particle { float x, y, z, mass; };
 
 向量化类型不能“创造”对齐。把未对齐地址强转为 `float4*` 可能是未定义行为或退化访问。
 
-## 3.4.1 Shared Memory Bank Conflict
+## 5.4.1 Shared Memory Bank Conflict
 
 Shared Memory 常按 32 个 bank 组织，连续 32-bit word 轮转映射到 bank。近似模型：
 
@@ -72,7 +72,7 @@ __shared__ float tile_pad[32][33]; // padding 打散行首 bank
 
 Padding 简单有效，但 Tensor Core operand 的布局更复杂，常用 swizzle。
 
-## 3.4.2 Swizzle 是什么
+## 5.4.2 Swizzle 是什么
 
 Swizzle 是从逻辑坐标到 shared 地址的可逆重排：
 
@@ -84,7 +84,7 @@ logical (row, col)
 
 目标是让计算阶段的一条 `ldmatrix`、WGMMA 或普通 load/store 覆盖不同 bank，同时保留可计算的布局。软件手写 swizzle 时，生产者和消费者必须使用同一映射；TMA swizzle 则把 global→shared 落位重排交给 TensorMap/TMA 硬件。
 
-## 3.4.3 TMA swizzle
+## 5.4.3 TMA swizzle
 
 常见 TensorMap swizzle 模式包括：
 
@@ -114,14 +114,14 @@ cuTensorMapEncodeTiled(
     CU_TENSOR_MAP_FLOAT_OOB_FILL_NONE);
 ```
 
-## 3.4.4 Interleave 与 swizzle 不同
+## 5.4.4 Interleave 与 swizzle 不同
 
 - **Interleave** 描述 global tensor 本身的通道/元素组织，例如 16B/32B interleaved layout；
 - **Swizzle** 主要描述 TMA 在 shared memory 中如何重排以避开 bank conflict。
 
 二者存在合法组合约束。例如 32B interleave 要求更严格的 global address/stride 对齐，并要求匹配的 32B swizzle。不能把它们都笼统叫“layout”后任意组合。
 
-## 3.4.5 OOB fill
+## 5.4.5 OOB fill
 
 TensorMap 的 bounding box 可跨出 global tensor 边界。TMA load 可自动填：
 
@@ -130,7 +130,7 @@ TensorMap 的 bounding box 可跨出 global tensor 边界。TMA load 可自动�
 
 这消除了每个线程的边界分支，但不会放宽 descriptor 的 alignment、stride、box 等约束。Blackwell sub-byte 类型不支持 OOB-NaN。
 
-## 3.5 Transaction 利用率与诊断方法
+## 5.5 Transaction 利用率与诊断方法
 
 1. 用 Nsight Compute 看 global sectors/request 与 requested/actual throughput；
 2. 看 shared bank conflict/replay 指标；

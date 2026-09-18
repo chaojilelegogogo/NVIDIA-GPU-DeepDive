@@ -1,6 +1,6 @@
-# 5.5 Part 4：Hopper —— TMA、`mbarrier` 与 `wgmma.mma_async`
+# 6.5 Part 2：Hopper —— TMA、`mbarrier` 与 `wgmma.mma_async`
 
-## 5.5.1 Hopper 解决了哪三个问题
+## 6.5.1 Hopper 解决了哪三个问题
 
 Ampere 很强，但仍有三个瓶颈：
 
@@ -10,7 +10,7 @@ Ampere 很强，但仍有三个瓶颈：
 
 Hopper 用 TMA、Warpgroup MMA 和异步完成协议分别处理前两个问题；第三个问题延续到 Blackwell TMEM。
 
-## 5.5.2 TMA：由 DMA 搬一个 tile
+## 6.5.2 TMA：由 DMA 搬一个 tile
 
 TMA（Tensor Memory Accelerator）使用 Host 端构建的 tensor map 描述多维张量的 shape、stride、边界和 Shared Memory swizzle。一个线程可发起 tile 搬运，DMA 硬件完成地址生成和数据移动。
 
@@ -23,11 +23,11 @@ TMA（Tensor Memory Accelerator）使用 Host 端构建的 tensor map 描述多�
 
 TMA 的“数据到了”不是普通 `__syncthreads()`：需要通过 `mbarrier` 的 phase/token 与 transaction completion 表达。TMA multicast 还可将 tile 发给同一 cluster 的多个 CTA；这要求正确的 cluster launch 与 DSM 生命周期。
 
-## 5.5.3 Warpgroup：为什么从 32 线程变成 128 线程
+## 6.5.3 Warpgroup：为什么从 32 线程变成 128 线程
 
 Warpgroup 由 4 个连续 Warp（128 threads）组成。更大协作集合可驱动更大的 matrix instruction tile、分摊指令发射开销并提高输入复用。它不是一个新的通用 CUDA block，也不是“128 个线程天然有 barrier”；需要会合时仍使用对应的 Warp/CTA/cluster 原语。
 
-## 5.5.4 `wgmma.mma_async`：异步矩阵乘加
+## 6.5.4 `wgmma.mma_async`：异步矩阵乘加
 
 | 字段 | 内容 |
 |---|---|
@@ -58,7 +58,7 @@ wgmma.wait_group.sync.aligned 0;
 
 `wait_group N` 不是“等第 N 组”；`wait_group 0` 只应放在首次读取对应 accumulator 或要覆盖其寄存器之前。WGMMA fence 也不能替代 generic↔async proxy fence。
 
-## 5.5.5 Hopper GEMM pipeline
+## 6.5.5 Hopper GEMM pipeline
 
 ```text
 TMA 把下一 A/B tile 写入 Shared Memory（含 swizzle）

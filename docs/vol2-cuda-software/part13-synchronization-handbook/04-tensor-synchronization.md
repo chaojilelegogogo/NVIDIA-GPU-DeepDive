@@ -85,6 +85,6 @@ WGMMA 不是一个“warpgroup barrier”。它不要求或保证 CTA 内其它 
 - WGMMA 只能在支持该 ISA 的 Hopper 目标上以合法的 128-thread operand/descriptor 布局测试。
 - `tcgen05`/TMEM 只在相应数据中心 Blackwell architecture-specific target 上测试；`sm_120` 不支持。
 
-本仓库不会放置“只有 mnemonic、operand/layout 不合法”的假 WGMMA/tcgen05 kernel。目标相关实验说明见 [`src/.../04-tensor-synchronization/README.md`](../../../src/part13-synchronization-handbook/04-tensor-synchronization/README.md)，完整 operand 构造应复用 Part 5 的 CuTe/CUTLASS 路线。
+本仓库不会放置“只有 mnemonic、operand/layout 不合法”的假 WGMMA/tcgen05 kernel。目标相关实验说明见 [`src/.../04-tensor-synchronization/README.md`](../../../src/part13-synchronization-handbook/04-tensor-synchronization/README.md)，完整 operand 构造应复用 Part 6 的 CuTe/CUTLASS 路线。
 
 下一篇：[Collectives and Atomics](05-collectives-and-atomics.md)。

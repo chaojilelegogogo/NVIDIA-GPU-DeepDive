@@ -1,6 +1,6 @@
-# 5.4 Part 3：Turing/Ampere —— `mma.sync`、`ldmatrix` 与 `cp.async`
+# 6.4 Part 5：Turing/Ampere —— `mma.sync`、`ldmatrix` 与 `cp.async`
 
-## 5.4.1 为什么 WMMA 不够
+## 6.4.1 为什么 WMMA 不够
 
 WMMA 很适合学习，但隐藏了 instruction shape、寄存器 tuple 和 Shared Memory layout。高性能 CUTLASS/CuTe kernel 需要准确控制：
 
@@ -11,7 +11,7 @@ WMMA 很适合学习，但隐藏了 instruction shape、寄存器 tuple 和 Shar
 
 Turing 扩展 INT8/INT4 等推理路径；Ampere 增加 TF32/BF16 和更丰富的 `mma.sync` 形状。这里的核心仍是 Warp 寄存器 MMA。
 
-## 5.4.2 `mma.sync.aligned` 到底做什么
+## 6.4.2 `mma.sync.aligned` 到底做什么
 
 以常见 Ampere FP16 → FP32 accumulator 路径为例：
 
@@ -37,7 +37,7 @@ mma.sync.aligned.m16n8k16.row.col.f16.f16.f32.f32
 
 这一条指令实现 `D=A×B+C`，但 16×8 的 D 元素分散在 Warp 的寄存器中。之后循环不同 K tile，会将 D 再作为 C 输入继续累加；最后才由 epilogue 写回 global memory。
 
-## 5.4.3 `ldmatrix`：Shared Memory → 正确的寄存器 fragment
+## 6.4.3 `ldmatrix`：Shared Memory → 正确的寄存器 fragment
 
 `mma.sync` 不能把任意普通 load 的结果当作 operand。`ldmatrix` 让 Warp 协作把 Shared Memory tile 分发成规定的寄存器 layout：
 
@@ -55,7 +55,7 @@ ldmatrix.sync.aligned.m8n8.x4.shared.b16
 
 正确流程：将 global tile 写入 shared → CTA/warp 正确同步 → `ldmatrix` → `mma.sync`。`.trans` 是指定的 fragment 分配变体，不是通用矩阵转置；Shared layout、padding/swizzle、`ldmatrix` 形状和 MMA layout 必须作为一个整体设计。
 
-## 5.4.4 `cp.async`：为什么 Tensor Core 章节要学习它
+## 6.4.4 `cp.async`：为什么 Tensor Core 章节要学习它
 
 Ampere 前的搬运会经过寄存器：
 
@@ -81,7 +81,7 @@ cp.async.wait_group 0;  // 真正消费本 tile 前再等待
 
 不要将 `wait_group 0` 紧跟 `commit_group`，否则没有搬运/计算重叠。多 stage GEMM 会预取下一 K tile、计算当前 tile、只在首次 `ldmatrix` 消费时等待当前 tile。
 
-## 5.4.5 一个 Ampere mainloop 的伪代码
+## 6.4.5 一个 Ampere mainloop 的伪代码
 
 ```text
 预取 stage 0 的 A/B 到 shared，commit

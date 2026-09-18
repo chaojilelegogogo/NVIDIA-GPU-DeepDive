@@ -1,6 +1,6 @@
-# 5.7 Part 6/7/8：CUDA → PTX → SASS、CUTLASS 与自建 GEMM
+# 6.7 Part 7/8/9：CUDA → PTX → SASS、CUTLASS 与自建 GEMM
 
-## 5.7.1 三层映射：把它当作实验结果
+## 6.7.1 三层映射：把它当作实验结果
 
 | 代码层 | PTX 可能线索 | 典型 SASS 线索 | 说明 |
 |---|---|---|---|
@@ -27,7 +27,7 @@ nvcc -std=c++20 -arch=sm_80 --ptxas-options=-v -c gemm.cu
 
 对 Hopper/Blackwell DC/RTX 50 分别使用实际可用的 `sm_90a`、`sm_100a`/`sm_103a`、`sm_120`。编译失败也是“这条指令不属于该目标”的有价值证据。
 
-## 5.7.2 CUTLASS/CuTe 怎样对应硬件
+## 6.7.2 CUTLASS/CuTe 怎样对应硬件
 
 ```text
 Device GEMM：launch、tile shape、epilogue
@@ -47,7 +47,7 @@ MMA Atom 并非“任意 GEMM”。它描述一个目标 ISA 支持的固定 sha
 4. 找 epilogue，确定 accumulator 如何转换和存储；
 5. 导出 PTX/SASS 验证，不要只相信模板名称。
 
-## 5.7.3 七阶 GEMM 实战
+## 6.7.3 七阶 GEMM 实战
 
 | 版本 | 实现 | 本阶段唯一目标 |
 |---|---|---|
@@ -61,7 +61,7 @@ MMA Atom 并非“任意 GEMM”。它描述一个目标 ISA 支持的固定 sha
 
 每次只改一个维度，并保存：高精度 reference、相同问题规模、CUDA Toolkit、编译命令、PTX/SASS、Nsight Compute 报告。否则无法判断性能变化来自 ISA、tile、精度、layout 还是测量噪声。
 
-## 5.7.4 性能与正确性闭环
+## 6.7.4 性能与正确性闭环
 
 1. 先用 FP32/reference GEMM 检查绝对/相对误差；
 2. warmup 后多次测量吞吐，不用单次时间下结论；

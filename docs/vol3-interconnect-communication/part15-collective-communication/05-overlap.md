@@ -9,9 +9,9 @@
 回顾卷一的两个事实：
 
 1. **通信的搬运主力不是计算单元**：跨节点走网卡 DMA（RDMA），节点内走 NVLink 的 copy engine 或 NCCL kernel 的 LD/ST——它们都不需要 Tensor Core 参与；
-2. **GPU 是多队列设备**：不同 CUDA Stream 上的 kernel 可以并发执行（Part 7）。
+2. **GPU 是多队列设备**：不同 CUDA Stream 上的 kernel 可以并发执行（Part 8）。
 
-所以理论上：把通信排到 `stream_comm`、计算排到 `stream_comp`，两者就能**时间重叠**——通信的这段时间不再是纯浪费。这和 Part 3/Part 4 的"访存与计算重叠"（`cp.async`、双缓冲）是同一个思想，只是对象从"SM 内的访存"换成了"GPU 间的通信"。
+所以理论上：把通信排到 `stream_comm`、计算排到 `stream_comp`，两者就能**时间重叠**——通信的这段时间不再是纯浪费。这和 Part 5/Part 2 的"访存与计算重叠"（`cp.async`、双缓冲）是同一个思想，只是对象从"SM 内的访存"换成了"GPU 间的通信"。
 
 \[
 T_{\text{step}} \approx \max(T_{\text{comp}},\ T_{\text{comm}}) \quad\text{（理想重叠）} \qquad vs \qquad T_{\text{comp}} + T_{\text{comm}} \quad\text{（串行）}
@@ -91,11 +91,11 @@ Stream 级重叠有个天花板：**NCCL kernel 和计算 kernel 是两个独立
 
 | 代表 | 做法 | 收益 |
 |---|---|---|
-| **DeepEP** | MoE dispatch/combine 写成融合 kernel，warp 专职化（Part 4 的 Warp Specialization 思想复用） | 通信与 expert GEMM 在 kernel 内精细交错 |
+| **DeepEP** | MoE dispatch/combine 写成融合 kernel，warp 专职化（Part 2 的 Warp Specialization 思想复用） | 通信与 expert GEMM 在 kernel 内精细交错 |
 | **Flux / 分布式 GEMM** | GEMM tile 算完一片立刻发一片（tile 粒度流水线） | 消除 kernel 边界气泡 |
-| **TMA Multicast 思路** | Hopper 的 TMA 组播（Part 3 §5）本身就是"硬件级的一次写多处" | 节点内广播场景的极致形态 |
+| **TMA Multicast 思路** | Hopper 的 TMA 组播（Part 5 §5）本身就是"硬件级的一次写多处" | 节点内广播场景的极致形态 |
 
-**思想内核与卷一卷二完全同构**：Warp Specialization（Part 4）、异步流水线（Part 3）、单 kernel 融合（Part 11 的 Kernel Fusion）——只是把舞台从"一颗 SM"扩大到了"一个集群"。这就是全书反复强调的：**通信优化不是新学问，是你已经会的微架构技巧在新尺度上的重演。**
+**思想内核与卷一卷二完全同构**：Warp Specialization（Part 2）、异步流水线（Part 5）、单 kernel 融合（Part 11 的 Kernel Fusion）——只是把舞台从"一颗 SM"扩大到了"一个集群"。这就是全书反复强调的：**通信优化不是新学问，是你已经会的微架构技巧在新尺度上的重演。**
 
 ## 6. 决策清单
 

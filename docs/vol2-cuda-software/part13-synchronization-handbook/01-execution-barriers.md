@@ -72,7 +72,7 @@ Volta 的 Independent Thread Scheduling 后，warp 中不同 lane 可处于不�
 
 ## 13.1.3 Cluster barrier：跨 CTA 的会合
 
-> 执行层级与 `clusterDim`/`block_rank`：[Part 02 §2.2.4](../part02-cuda-programming-model.md)。DSM 地址与性能：[Part 03 §3.10](../part03-cuda-memory/08-cluster-dsm-tmem.md)。CG API：[Part 07 §7.4.5](../part07-cuda-cpp-api.md)。本节只回答 **execution barrier + DSM 可见性**。
+> 执行层级与 `clusterDim`/`block_rank`：[Part 04 §4.2.4](../part04-cuda-programming-model.md)。DSM 地址与性能：[Part 05 §5.10](../part05-cuda-memory/08-cluster-dsm-tmem.md)。CG API：[Part 08 §8.4.5](../part08-cuda-cpp-api.md)。本节只回答 **execution barrier + DSM 可见性**。
 
 | 字段              | 内容                                                                               |
 | ----------------- | ---------------------------------------------------------------------------------- |
@@ -90,7 +90,7 @@ Volta 的 Independent Thread Scheduling 后，warp 中不同 lane 可处于不�
 | 问题                                 | 原语                                                  |
 | ------------------------------------ | ----------------------------------------------------- |
 | 同 cluster 的 CTA 是否都到达交接点？ | `cluster.sync()` 【execution】                      |
-| peer shared 地址如何得到？           | `map_shared_rank` 【DSM / Memory，Part 03】         |
+| peer shared 地址如何得到？           | `map_shared_rank` 【DSM / Memory，Part 05】         |
 | 异步 TMA 是否写完 remote shared？    | mbarrier transaction 【async completion，13.3】       |
 | 普通 global flag 跨任意 CTA 发布？   | release/acquire +`.gpu`/`.sys` 【ordering，13.2】 |
 

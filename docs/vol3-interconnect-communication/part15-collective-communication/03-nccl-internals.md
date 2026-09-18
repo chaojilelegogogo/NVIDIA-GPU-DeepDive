@@ -55,7 +55,7 @@ launch 1 个 NCCL kernel（常驻 SM 上跑，直到通信完成）
 **一个 Channel = 一条独立的逻辑环（或树）+ 一组专用的通信资源（buffer、线程块）**。
 
 - 大数据被切成 `nChannels` 条，每条 channel 走不同的环（边集合可能不同，以打满多条物理链路）；
-- 类比：Part 3 的"多 stage 异步流水线"——单条环喂不饱全部链路带宽，就多开几条并行流水；
+- 类比：Part 5 的"多 stage 异步流水线"——单条环喂不饱全部链路带宽，就多开几条并行流水；
 - `NCCL_NCHANNELS`（或老版本 `NCCL_NTHREADS` 间接影响）可调；默认 NCCL 自动按拓扑决定。
 
 效果：8 卡 NVSwitch 机型上，单 channel 的环只能用一部分链路，多 channel 可以把全互联带宽吃满。
@@ -107,9 +107,9 @@ Hopper/Blackwell 节点（H100/B200 + NVSwitch）上，NCCL 会优先启用 **NV
 
 ## 8. 与全书主线的呼应
 
-- **通信 kernel 占 SM** ↔ Part 4 的 Warp Scheduler、Part 11 的 Occupancy：NCCL kernel 与你的计算 kernel 抢同一批 SM，15.5 的重叠技巧全是在解这个资源竞争。
+- **通信 kernel 占 SM** ↔ Part 2 的 Warp Scheduler、Part 11 的 Occupancy：NCCL kernel 与你的计算 kernel 抢同一批 SM，15.5 的重叠技巧全是在解这个资源竞争。
 - **flag 轮询** ↔ Part 13 的内存序：LL 协议的 flag 机制本质是 `st.release` / `ld.acquire` 语义的跨 GPU 版本，作用域从 `.cta`/`.gpu` 扩展到了 `.sys`。
-- **channel 切条流水** ↔ Part 3 的双缓冲/多 stage：同一个"用流水掩盖延迟"的思想，从 SM 内搬到了 GPU 间。
+- **channel 切条流水** ↔ Part 5 的双缓冲/多 stage：同一个"用流水掩盖延迟"的思想，从 SM 内搬到了 GPU 间。
 
 ## 9. 参考资料
 

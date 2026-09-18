@@ -1,6 +1,6 @@
-# 5.2 Part 1：为什么 GPU 需要 Tensor Core
+# 6.2 Part 1：为什么 GPU 需要 Tensor Core
 
-## 5.2.1 标量 FMA 的瓶颈
+## 6.2.1 标量 FMA 的瓶颈
 
 普通 CUDA Core 做 GEMM 的内层类似：
 
@@ -13,7 +13,7 @@ for (int k = 0; k < K; ++k) {
 
 这段代码每次循环只表达一个标量 FMA。神经网络训练/推理包含海量、规则、可分块的 GEMM/卷积；若继续用标量 FMA，指令取指、调度和寄存器读取的控制开销会重复许多次。Tensor Core 将“固定小矩阵的许多 FMA”封装为一条矩阵指令，并用专用阵列并行完成。
 
-## 5.2.2 Roofline：为什么只有算得快还不够
+## 6.2.2 Roofline：为什么只有算得快还不够
 
 Tensor Core 提升峰值算力后，数据供给常成为瓶颈：
 
@@ -31,7 +31,7 @@ Tensor Core 提升峰值算力后，数据供给常成为瓶颈：
 - Hopper WGMMA：从 Shared Memory descriptor 消费 operand；
 - Blackwell TMEM：结果不必长期占用通用寄存器。
 
-## 5.2.3 Mixed Precision：用位宽交换吞吐和带宽
+## 6.2.3 Mixed Precision：用位宽交换吞吐和带宽
 
 | 格式/时期 | 工程动机 | 需要注意 |
 |---|---|---|
@@ -43,7 +43,7 @@ Tensor Core 提升峰值算力后，数据供给常成为瓶颈：
 
 低精度并非自动正确。你必须定义输入量化、accumulator 类型、epilogue、误差指标和测试集。尤其 FP4/FP8 常需要 block/micro-block scale；scale 也是数据布局和 MMA operand contract 的一部分。
 
-## 5.2.4 编程模型如何随硬件演进
+## 6.2.4 编程模型如何随硬件演进
 
 ```text
 Volta：操作数和 accumulator 都在寄存器

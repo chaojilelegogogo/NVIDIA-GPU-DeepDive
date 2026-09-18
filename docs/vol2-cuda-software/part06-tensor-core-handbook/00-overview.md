@@ -1,25 +1,25 @@
-# 第五部分 Tensor Core 指令全景与编程手册
+# 第六部分 Tensor Core 指令全景与编程手册
 
 > 面向 GPGPU 初学者。本部分按“为什么这代必须改变上一代的做法”组织，而不是按 API 名字堆砌。最终目标是能读懂一个 GEMM 的 CUDA/CuTe 代码，知道它会使用哪类 PTX 指令、数据放在哪里、谁在等待谁，以及如何用 PTX/SASS 验证自己的判断。
 
 ## 本部分的学习路线
 
 ```text
-Part 0  基础：SIMT、warp、GEMM tile、寄存器与 shared memory
+Part 00  基础：SIMT、warp、GEMM tile、寄存器与 shared memory
   ↓
 Part 1  为什么需要 Tensor Core：标量 FMA 的吞吐与 Roofline 瓶颈
   ↓
-Part 2  Volta：WMMA 和第一代 mma.sync
+Part 4  Volta：WMMA 和第一代 mma.sync
   ↓
-Part 3  Turing/Ampere：mma.sync、ldmatrix、cp.async
+Part 5  Turing/Ampere：mma.sync、ldmatrix、cp.async
   ↓
-Part 4  Hopper：TMA、mbarrier、WGMMA、warpgroup
+Part 2  Hopper：TMA、mbarrier、WGMMA、warpgroup
   ↓
-Part 5  Blackwell：TMEM、tcgen05、block scaling、CTA group
+Part 6  Blackwell：TMEM、tcgen05、block scaling、CTA group
   ↓
-Part 6  CUDA → PTX → SASS：如何实证，而非猜测
+Part 7  CUDA → PTX → SASS：如何实证，而非猜测
   ↓
-Part 7  CUTLASS/CuTe 和七阶 GEMM 实战路线
+Part 8  CUTLASS/CuTe 和七阶 GEMM 实战路线
 ```
 
 ## 三个必须先接受的事实

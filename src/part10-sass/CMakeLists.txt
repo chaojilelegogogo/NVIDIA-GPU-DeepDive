@@ -58,5 +58,5 @@ endfunction()
 add_part09_sass_case(01 ffma)
 
 add_custom_target(part09_sass_inspect
-  DEPENDS part09_case01_ffma_inspect
+  DEPENDS part10_case01_ffma_inspect
 )

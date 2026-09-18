@@ -1,6 +1,6 @@
-# 3.6–3.7 数据搬运演进：为什么从 `ld/st` 走到 TMA
+# 5.6–5.7 数据搬运演进：为什么从 `ld/st` 走到 TMA
 
-## 3.6 Tiled GEMM 给出的搬运动机
+## 5.6 Tiled GEMM 给出的搬运动机
 
 朴素 GEMM 反复从 global 读取相同 A/B 元素；tiled GEMM 先将 tile 搬进 shared，使一次片外读取被 CTA 内多次 MMA/FMA 复用。优化后新的瓶颈变成：**谁负责把 tile 搬入 shared，以及搬运能否与计算重叠。**
 
@@ -13,7 +13,7 @@ naive global load
   → accumulator 脱离 register
 ```
 
-## 3.7 数据搬运基线：`ld.global` + `st.shared`
+## 5.7 数据搬运基线：`ld.global` + `st.shared`
 
 ```cuda
 float x = gmem[index]; // global → register
@@ -37,7 +37,7 @@ HBM/L2/L1 → LDG → thread register → STS → shared
 
 这条路径仍然重要：小规模、不规则、需要寄存器变换的数据不一定适合异步 copy。
 
-## 3.E.1 Ampere：非 bulk `cp.async`
+## 5.E.1 Ampere：非 bulk `cp.async`
 
 ```text
 global → shared
@@ -45,7 +45,7 @@ global → shared
 
 跳过通用寄存器中转，并允许 copy 与计算重叠。但工作分配仍是逐线程的：每个 lane 计算自己的 global/shared 地址并发起 4/8/16B copy。它解决“寄存器中转 + 同步等待”，没有彻底解决“每线程地址生成和大量小指令”。
 
-## 3.E.2 Hopper：bulk copy
+## 5.E.2 Hopper：bulk copy
 
 `cp.async.bulk` 把一次操作扩大到一段以字节数描述的连续区域，通常由少量线程发起。相比非 bulk `cp.async`：
 
@@ -56,7 +56,7 @@ global → shared
 
 它适合连续块，却仍没有表达多维 tensor 的 shape/stride/boundary。
 
-## 3.E.3 Hopper：TMA / tensor copy
+## 5.E.3 Hopper：TMA / tensor copy
 
 TMA 把不随 tile 坐标变化的元数据放进 128B `CUtensorMap`：
 
@@ -79,7 +79,7 @@ kernel 每次只给 descriptor、tile 坐标、shared 目标和 completion objec
 单个 issuer 描述“我要哪个 tensor tile”
 ```
 
-## 3.E.4 Blackwell：扩展“搬什么”和“如何布局”
+## 5.E.4 Blackwell：扩展“搬什么”和“如何布局”
 
 Blackwell 不是把基础 TMA 推倒重来，而是在 TensorMap/tensor-copy 模型上扩展：
 
@@ -94,7 +94,7 @@ Blackwell 不是把基础 TMA 推倒重来，而是在 TensorMap/tensor-copy 模
 
 这些能力减少的不只是 copy 指令，还包括 gather/scatter、卷积展开、低精度 unpack/layout、跨 CTA 通知等数据编排工作。
 
-## 3.E.5 选择决策树
+## 5.E.5 选择决策树
 
 ```text
 要搬的数据是否 global → shared？
@@ -115,7 +115,7 @@ Blackwell 不是把基础 TMA 推倒重来，而是在 TensorMap/tensor-copy 模
 
 TMA 不是自动更快。小 tile、低复用、同步位置错误或 producer warp 调度不足，都可能让它输给简单 load。
 
-## 3.E.6 对照表
+## 5.E.6 对照表
 
 | 机制 | 最低代际 | 发起粒度 | 地址生成 | 寄存器中转 | 典型完成 |
 |---|---|---|---|---|---|
@@ -125,7 +125,7 @@ TMA 不是自动更快。小 tile、低复用、同步位置错误或 producer w
 | `cp.async.bulk.tensor` / TMA | Hopper | 1D–5D tile | TensorMap 硬件展开 | 无 | load:mbarrier；store:bulk group |
 | Blackwell tensor modes | Blackwell 特定 target | tile/gather/im2col/sub-byte | descriptor + mode | 无 | mbarrier/bulk group/CTA group |
 
-## 3.E.7 GEMM 中的完整因果链
+## 5.E.7 GEMM 中的完整因果链
 
 ```text
 朴素 GEMM：每次 FMA 都读 global

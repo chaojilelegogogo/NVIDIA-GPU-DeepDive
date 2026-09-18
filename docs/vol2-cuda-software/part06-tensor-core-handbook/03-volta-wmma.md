@@ -1,8 +1,8 @@
-# 5.3 Part 2：Volta —— WMMA 与第一代 `mma.sync`
+# 6.3 Part 4：Volta —— WMMA 与第一代 `mma.sync`
 
 > 先用 WMMA 学正确性与 Warp 协作，再学习 `mma.sync`。不要一开始手写 PTX。
 
-## 5.3.1 Volta Tensor Core 能计算什么
+## 6.3.1 Volta Tensor Core 能计算什么
 
 Volta 首次提供 Tensor Core。CUDA 程序员看到的是 Warp 协作的矩阵 FMA：
 
@@ -14,7 +14,7 @@ D = A × B + C
 
 硬件资料中常以较小的矩阵阵列单元描述实现；这与 PTX `m8n8k4` 不是同一抽象层。编程时以 PTX ISA 的 shape/operand 表为准。
 
-## 5.3.2 CUDA 层：`nvcuda::wmma`
+## 6.3.2 CUDA 层：`nvcuda::wmma`
 
 ```cpp
 #include <mma.h>
@@ -48,7 +48,7 @@ __global__ void wmma_gemm(const half* A, const half* B, float* C,
 
 `fragment` 不是“每个线程拥有完整 16×16 矩阵”。其元素如何分布在 32 lanes 是实现细节；正确做法是只使用 WMMA API，不手工假设 fragment 内数组的语义。
 
-## 5.3.3 PTX 层：`wmma.*` 与 `mma.sync`
+## 6.3.3 PTX 层：`wmma.*` 与 `mma.sync`
 
 WMMA C++ 可生成 `wmma.load`/`wmma.mma`/`wmma.store` PTX，也可能被编译器降为相关 `mma.sync` 形式。不要把具体生成方式当作 API 契约。
 
@@ -64,7 +64,7 @@ wmma.store.d.sync.aligned.row.m16n16k16.global.f32 ...;
 
 Volta 还公开了更基础的 `mma.sync.aligned.m8n8k4...`。它接受每 lane 的寄存器 tuple；Warp 可被理解为 Quad Pair 等内部协作分组。手写此类 PTX 时，A/B/C/D tuple 的数量、类型、layout 和所有参与 lane 的执行路径必须精确符合 PTX ISA。
 
-## 5.3.4 SASS 和硬件验证
+## 6.3.4 SASS 和硬件验证
 
 Volta/Turing/Ampere 的 Tensor Core SASS 常出现 `HMMA` 线索；但命名、shape 编码与调度细节依 Toolkit/目标变化。建议：
 

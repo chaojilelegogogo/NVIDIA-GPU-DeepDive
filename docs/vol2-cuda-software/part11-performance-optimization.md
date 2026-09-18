@@ -8,7 +8,7 @@
 
 ```
 1. 用 Roofline 模型（Part 1.6）判断 kernel 是 Compute Bound 还是 Memory Bound
-2. 用 Nsight Compute 的 Warp State/Stall 分析（Part 9.7）定位具体瓶颈类型
+2. 用 Nsight Compute 的 Warp State/Stall 分析（Part 10.7）定位具体瓶颈类型
 3. 针对定位到的瓶颈，选择对应的优化手段（本部分下面按类别展开）
 4. 修改后重新测量，确认瓶颈是否真的转移/消除，而不是主观猜测
 ```
@@ -17,7 +17,7 @@
 
 ## 11.2 Memory 优化
 
-对照第三部分：
+对照第五部分：
 
 - **Coalescing**：确保 Warp 内线程访问的 Global Memory 地址连续且对齐；结构体数组考虑 AoS→SoA 转换。
 - **Vector Load**：用 `float4`/`int4` 等向量类型一次搬运 16 字节（对应 SASS 的 `LDG.128`），减少指令数、更好地利用一次内存事务的带宽，前提是数据本身对齐且访问模式允许合并成向量宽度。
@@ -31,17 +31,17 @@
 对照第四、五部分：
 
 - **减少指令数**：用 `-use_fast_math`（在允许精度损失时）、`__expf`/`__logf` 等快速数学函数走 SFU 而不是软件展开的多指令实现。
-- **Loop Unrolling（循环展开）**：`#pragma unroll` 显式展开循环，减少循环控制开销（`IADD`/`ISETP`/`BRA`），并给编译器更大的指令调度空间去构造指令级并行、填充延迟（对照第九部分 9.6）。展开也不是越多越好——过度展开会增加寄存器压力（挤压 Occupancy）、增加代码体积（可能影响指令 Cache 命中），需要实测权衡。
-- **善用 Tensor Core**：能表达成矩阵乘法的计算尽量转化为 GEMM 形式交给 Tensor Core（第五部分），标量 ALU 路径几乎完全无法与专用矩阵乘法电路的吞吐相提并论。
+- **Loop Unrolling（循环展开）**：`#pragma unroll` 显式展开循环，减少循环控制开销（`IADD`/`ISETP`/`BRA`），并给编译器更大的指令调度空间去构造指令级并行、填充延迟（对照第十部分 9.6）。展开也不是越多越好——过度展开会增加寄存器压力（挤压 Occupancy）、增加代码体积（可能影响指令 Cache 命中），需要实测权衡。
+- **善用 Tensor Core**：能表达成矩阵乘法的计算尽量转化为 GEMM 形式交给 Tensor Core（第六部分），标量 ALU 路径几乎完全无法与专用矩阵乘法电路的吞吐相提并论。
 - **Dual Issue 友好的指令混合**：避免整段代码全是同一类型指令（比如全是访存或全是浮点运算），适当的指令类型混合有助于编译器利用不同执行单元的并行发射能力。
 
 ## 11.4 Pipeline 优化
 
 对照第三、四部分：
 
-- **Double/Triple Buffer**：用 `cuda::pipeline`（第七部分 7.5）或手写 `cp.async`/`mbarrier` 序列，构建搬运与计算重叠的软件流水线。级数（stage 数）的选择需要在"更深流水线掩盖更多延迟波动"和"更多 Shared Memory 占用挤压 Occupancy"之间权衡，通常通过实测在 2/3/4 级之间选择最优点。
-- **Warp Specialization**（Hopper 起，第四部分 4.8）：把生产者（TMA 搬运）和消费者（WGMMA 计算）分给不同 Warp Group，用 `setmaxnreg` 精细调配寄存器配额。
-- **减少同步粒度**：优先用 `__syncwarp()` 而不是 `__syncthreads()`（如果逻辑上只需要 Warp 内同步），减少不必要的等待范围（对照第二部分 2.10 的同步代价分层）。
+- **Double/Triple Buffer**：用 `cuda::pipeline`（第八部分 7.5）或手写 `cp.async`/`mbarrier` 序列，构建搬运与计算重叠的软件流水线。级数（stage 数）的选择需要在"更深流水线掩盖更多延迟波动"和"更多 Shared Memory 占用挤压 Occupancy"之间权衡，通常通过实测在 2/3/4 级之间选择最优点。
+- **Warp Specialization**（Hopper 起，第二部分 4.8）：把生产者（TMA 搬运）和消费者（WGMMA 计算）分给不同 Warp Group，用 `setmaxnreg` 精细调配寄存器配额。
+- **减少同步粒度**：优先用 `__syncwarp()` 而不是 `__syncthreads()`（如果逻辑上只需要 Warp 内同步），减少不必要的等待范围（对照第四部分 2.10 的同步代价分层）。
 
 ## 11.5 Occupancy 优化
 
@@ -49,7 +49,7 @@
 
 - 用 `__launch_bounds__(maxThreadsPerBlock, minBlocksPerMultiprocessor)` 给编译器提供寄存器分配的目标提示。
 - 用 CUDA Occupancy Calculator / `cudaOccupancyMaxActiveBlocksPerMultiprocessor` API 在编译期/运行时评估不同 Block 大小下的理论 Occupancy。
-- **牢记 Occupancy 不是目标，是手段**：只有当 Nsight Compute 显示瓶颈是"延迟没有被充分隐藏"（如 `stall_long_scoreboard` 占比高，同时 Occupancy 明显偏低）时，提高 Occupancy 才是对症的药；如果 kernel 已经是 Compute Bound 且指令级并行度良好，过度压低寄存器数换 Occupancy 反而可能因为寄存器溢出（Local Memory 访问，第三部分 3.1.6）而变慢。
+- **牢记 Occupancy 不是目标，是手段**：只有当 Nsight Compute 显示瓶颈是"延迟没有被充分隐藏"（如 `stall_long_scoreboard` 占比高，同时 Occupancy 明显偏低）时，提高 Occupancy 才是对症的药；如果 kernel 已经是 Compute Bound 且指令级并行度良好，过度压低寄存器数换 Occupancy 反而可能因为寄存器溢出（Local Memory 访问，第五部分 3.1.6）而变慢。
 
 ## 11.6 Register 优化
 
@@ -59,9 +59,9 @@
 
 ## 11.7 Persistent Kernel（常驻内核）
 
-- **What**：不让 Kernel 按传统方式启动一次处理完所有数据就退出，而是启动**固定数量、刚好等于 GPU 实际能同时驻留的 Block 数**的 Kernel，让每个 Block（通常配合 `%smid`，第六部分 6.6）在内部用循环反复从一个工作队列里领取新的任务，直到全部任务处理完毕才真正退出。
-- **Why**：避免了反复启动 Kernel 带来的 Launch Overhead（第七部分 7.3），也避免了每次启动新一批 Block 时，GigaThread Engine 重新做 Block 到 SM 分发决策的开销；对于任务粒度很细、数量巨大、且需要更精细的负载均衡（比如工作窃取 Work-Stealing）的场景尤其有效。
-- **代价**：编程复杂度显著提高，需要手工实现任务队列和负载均衡逻辑；且要求 Kernel 启动时精确匹配硬件能同时驻留的 Block 数（常配合 `cudaOccupancyMaxActiveBlocksPerMultiprocessor` 计算），如果启动的 Block 数超过硬件容量，可能导致部分 Block 死锁式地永远等不到调度（尤其是涉及跨 Block 同步的场景，参考第七部分 Cooperative Launch 的约束）。
+- **What**：不让 Kernel 按传统方式启动一次处理完所有数据就退出，而是启动**固定数量、刚好等于 GPU 实际能同时驻留的 Block 数**的 Kernel，让每个 Block（通常配合 `%smid`，第七部分 6.6）在内部用循环反复从一个工作队列里领取新的任务，直到全部任务处理完毕才真正退出。
+- **Why**：避免了反复启动 Kernel 带来的 Launch Overhead（第八部分 7.3），也避免了每次启动新一批 Block 时，GigaThread Engine 重新做 Block 到 SM 分发决策的开销；对于任务粒度很细、数量巨大、且需要更精细的负载均衡（比如工作窃取 Work-Stealing）的场景尤其有效。
+- **代价**：编程复杂度显著提高，需要手工实现任务队列和负载均衡逻辑；且要求 Kernel 启动时精确匹配硬件能同时驻留的 Block 数（常配合 `cudaOccupancyMaxActiveBlocksPerMultiprocessor` 计算），如果启动的 Block 数超过硬件容量，可能导致部分 Block 死锁式地永远等不到调度（尤其是涉及跨 Block 同步的场景，参考第八部分 Cooperative Launch 的约束）。
 
 ## 11.8 Kernel Fusion（算子融合）
 
@@ -71,7 +71,7 @@
 
 ## 11.9 用 Roofline + Nsight + Micro Benchmark 形成优化闭环
 
-- **Roofline**：确定当前 kernel 相对理论屋顶线的差距，判断优化空间和优化方向（第一部分 1.6、第九部分 9.7）。
+- **Roofline**：确定当前 kernel 相对理论屋顶线的差距，判断优化空间和优化方向（第一部分 1.6、第十部分 9.7）。
 - **Nsight Compute**：定位具体瓶颈（Stall 类型、Occupancy 限制因素、访存效率指标如 sector 利用率、Tensor Core 利用率）。
 - **Nsight Systems**：从更宏观的时间线视角，观察多 Stream/多 Kernel 之间的重叠情况，定位 Host-Device 同步点、Kernel Launch 排队造成的 GPU 空闲时段。
 - **Micro Benchmark（微基准测试）**：针对单一硬件行为（比如某条指令的确切延迟、某种访存模式的确切带宽），编写最小化的测试 kernel 单独测量，用来验证"我对硬件行为的理解是否正确"，也是 Citadel 等研究团队产出《Dissecting NVIDIA XXX Architecture via Microbenchmarking》系列论文的核心方法——当官方文档语焉不详时，微基准测试是获得第一手硬件行为数据最可靠的手段。

@@ -68,11 +68,11 @@ TMA 是 Hopper 最标志性的硬件新增。它是一个**内嵌在 SM 里的�
 - **独立于 LD/ST Unit**：搬运不再占用 Warp 的指令发射带宽和寄存器。
 - **配合 `mbarrier`**：TMA 的完成信号走异步事务屏障（transaction-based mbarrier），而非传统 `bar.sync`。
 
-TMA 直接把 A100 遗留问题 1「搬运仍是 Warp 参与」彻底消灭——它对应 Part 3 §3.9 和 roadmap Track 2.3。
+TMA 直接把 A100 遗留问题 1「搬运仍是 Warp 参与」彻底消灭——它对应 Part 5 §5.9 和 roadmap Track 2.3。
 
 ### 2.4 寄存器堆仍是 256 KB（这是下一代的伏笔）
 
-关键的"没变"：**H100 的寄存器堆容量和 A100 一样，还是 256 KB/SM**（这个数字从 Kepler 起十年没变）。而 WGMMA 处理的 tile 更大了、累加器规模更大了——结果就是**累加器开始和普通数据抢寄存器**。这个问题 Hopper 没有解决，而是留给了 Blackwell 用 TMEM 去解决（见 B200 手册 §2.2）。理解这个"不变"很重要，它是 Hopper→Blackwell 演进的最直接动因。
+关键的"没变"：**H100 的寄存器堆容量和 A100 一样，还是 256 KB/SM**（这个数字从 Kepler 起十年没变）。而 WGMMA 处理的 tile 更大了、累加器规模更大了——结果就是**累加器开始和普通数据抢寄存器**。这个问题 Hopper 没有解决，而是留给了 Blackwell 用 TMEM 去解决（见 B200 手册 §4.2）。理解这个"不变"很重要，它是 Hopper→Blackwell 演进的最直接动因。
 
 ## 3. 全异步 GPU 的三件套：TMA + WGMMA + mbarrier
 
@@ -99,7 +99,7 @@ H100 的硬件 Feature 可以归结为一条主线：**把计算（Tensor Core�
 | **mbarrier** | 异步完成信号（事务计数），替代 `bar.sync` | 支撑上面两者的异步语义 |
 | **Cluster + DSM** | 跨 SM 直接访问对方 Shared Memory | 问题 3（相邻 SM 无法共享）|
 
-这一套组合拳，就是后来 FlashAttention-3、CUTLASS 3.x 在 Hopper 上跑出高 Tensor Core 利用率的硬件基础（Warp Specialization 范式），详见 Part 4 §4.8、Part 12。
+这一套组合拳，就是后来 FlashAttention-3、CUTLASS 3.x 在 Hopper 上跑出高 Tensor Core 利用率的硬件基础（Warp Specialization 范式），详见 Part 2 §2.8、Part 12。
 
 ## 4. 算力公式：从硬件单元推导 H100 峰值
 
@@ -133,7 +133,7 @@ FP32 = 132 × 128 × 2 × 1.98e9 = 16896 × 2 × 1.98e9
 FP64 = 132 × 64 × 2 × 1.98e9 = 8448 × 2 × 1.98e9 ≈ 33.5 TFLOPS ✅
 ```
 
-> 对比 A100 的 19.5 / 9.7，H100 FP32 提升 3.4×，正是 §2.1 的"issue 翻倍 + SM 数 + 频率"三者叠加。
+> 对比 A100 的 19.5 / 9.7，H100 FP32 提升 3.4×，正是 §4.1 的"issue 翻倍 + SM 数 + 频率"三者叠加。
 
 ### 4.2 Tensor Core（矩阵 MMA，主 boost 1830 MHz）
 
@@ -173,14 +173,14 @@ INT8 = 132 × 4096 × 2 × 1.83e9 = 1.9789e15 ≈ 1978.9 TOPS ✅
 
 | 格式 | 稠密 | 稀疏(2:4) | 对应公式 |
 |---|---|---|---|
-| FP64（非 Tensor）| 33.5 TFLOPS | — | §4.1 |
-| FP64 Tensor | 66.9 TFLOPS | — | §4.2 |
-| FP32（非 Tensor）| 66.9 TFLOPS | — | §4.1 |
-| TF32 Tensor | 494.7 | 989.4 | §4.2 |
-| FP16 Tensor | 989.4 | 1978.9 | §4.2 |
-| BF16 Tensor | 989.4 | 1978.9 | §4.2 |
-| **FP8 Tensor** | **1978.9** | **3957.8** | §4.2 |
-| INT8 Tensor | 1978.9 | 3957.8 | §4.2 |
+| FP64（非 Tensor）| 33.5 TFLOPS | — | §2.1 |
+| FP64 Tensor | 66.9 TFLOPS | — | §2.2 |
+| FP32（非 Tensor）| 66.9 TFLOPS | — | §2.1 |
+| TF32 Tensor | 494.7 | 989.4 | §2.2 |
+| FP16 Tensor | 989.4 | 1978.9 | §2.2 |
+| BF16 Tensor | 989.4 | 1978.9 | §2.2 |
+| **FP8 Tensor** | **1978.9** | **3957.8** | §2.2 |
+| INT8 Tensor | 1978.9 | 3957.8 | §2.2 |
 | FP16 / BF16（非 Tensor）| 133.8 | — | 2× FP32（packed FP16）|
 
 > 来源：[NVIDIA H100 官方数据表](https://www.nvidia.com/en-gb/data-center/h100/)（FP64 34 / FP64-TC 67 / FP32 67 / TF32 989* / BF16 1979* / FP16 1979* / FP8 3958* / INT8 3958*；带 * 为稀疏口径；稠密即一半）。
@@ -215,7 +215,7 @@ FP8 + Transformer Engine —— 在 FP16 基础上再 ×2
 AI_ridge(H100) = FP16-TC 峰值 / 带宽 = 989.4 TFLOPS / 3.35 TB/s ≈ 295 FLOP/Byte
 ```
 
-相对 A100 的约 153，H100 的 Ridge Point 右移到约 295——**越来越多原本"算力受限"的 kernel 在 H100 上反而变成"访存受限"**。这正是 Part 10 反复强调的「算力增长(6×)远超带宽增长(1.6×)」矛盾的直接量化，也是为什么 H100 必须在 TMA/DSM 这些"搬运"机制上做文章的根本原因。
+相对 A100 的约 153，H100 的 Ridge Point 右移到约 295——**越来越多原本"算力受限"的 kernel 在 H100 上反而变成"访存受限"**。这正是 Part 3 反复强调的「算力增长(6×)远超带宽增长(1.6×)」矛盾的直接量化，也是为什么 H100 必须在 TMA/DSM 这些"搬运"机制上做文章的根本原因。
 
 ## 6. H100 的硬件 Feature 清单
 

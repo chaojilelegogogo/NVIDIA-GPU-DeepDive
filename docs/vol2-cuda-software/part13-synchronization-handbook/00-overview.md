@@ -175,9 +175,9 @@ Hopper Cluster 是横切主题，应按问题类型阅读：
 
 | 问题 | 章节 |
 |---|---|
-| 为什么需要 Cluster？执行层级？ | [Part 02 §2.2.4](../part02-cuda-programming-model.md) |
-| DSM 是什么、怎么寻址、性能？ | [Part 03 §3.10](../part03-cuda-memory/08-cluster-dsm-tmem.md) |
-| `this_cluster` / `map_shared_rank` API？ | [Part 07 §7.4.5](../part07-cuda-cpp-api.md) |
+| 为什么需要 Cluster？执行层级？ | [Part 04 §4.2.4](../part04-cuda-programming-model.md) |
+| DSM 是什么、怎么寻址、性能？ | [Part 05 §5.10](../part05-cuda-memory/08-cluster-dsm-tmem.md) |
+| `this_cluster` / `map_shared_rank` API？ | [Part 08 §8.4.5](../part08-cuda-cpp-api.md) |
 | `cluster.sync()` / DSM 可见性？ | [本部分 13.1.3](01-execution-barriers.md) |
 | `.cluster` memory scope？ | [本部分 13.2](02-memory-ordering.md) |
 

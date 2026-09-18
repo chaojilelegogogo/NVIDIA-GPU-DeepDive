@@ -1,6 +1,6 @@
-# 3.13 正确性、编译验证与性能诊断
+# 5.13 正确性、编译验证与性能诊断
 
-## 3.13.1 先写清目标矩阵
+## 5.13.1 先写清目标矩阵
 
 每个实验在文件头记录：
 
@@ -15,7 +15,7 @@ Expected path: LDG+STS / cp.async / bulk / TMA / tcgen05
 
 这能避免把 `sm_90`、`sm_100a`、`sm_120` 的差异误判成代码 bug。
 
-## 3.13.2 四层验证
+## 5.13.2 四层验证
 
 ### CUDA/CuTe 源码
 
@@ -60,7 +60,7 @@ SASS mnemonic 会随架构/Toolkit 变化，用来确认真实 lowering，不要
 - shared bank conflict 是否降低；
 - stage 增加是否因 occupancy 下降而抵消收益。
 
-## 3.13.3 正确性测试矩阵
+## 5.13.3 正确性测试矩阵
 
 至少覆盖：
 
@@ -77,7 +77,7 @@ SASS mnemonic 会随架构/Toolkit 变化，用来确认真实 lowering，不要
 
 每次与简单 CPU reference 或普通 CUDA load/store baseline 比较。异步 race 常在循环第二轮、尾块或低 occupancy 下才出现。
 
-## 3.13.4 Compute Sanitizer
+## 5.13.4 Compute Sanitizer
 
 ```bash
 compute-sanitizer --tool memcheck ./test
@@ -87,7 +87,7 @@ compute-sanitizer --tool synccheck ./test
 
 工具未必能完整理解所有最新异步/TMEM 语义，但仍可发现大量地址、barrier participation 与 shared race。工具无报错不构成同步正确性的证明。
 
-## 3.13.5 TensorMap 编码失败清单
+## 5.13.5 TensorMap 编码失败清单
 
 `cuTensorMapEncode*` 返回错误时逐项检查：
 
@@ -102,7 +102,7 @@ compute-sanitizer --tool synccheck ./test
 9. OOB fill 是否适用于 element type；
 10. Driver 是否支持用于编译的 Toolkit API 版本。
 
-## 3.13.6 Hang 的系统排查
+## 5.13.6 Hang 的系统排查
 
 TMA/mbarrier kernel hang 通常来自：
 
@@ -119,7 +119,7 @@ cluster 中某 CTA 提前退出
 
 排查时把多 stage 降成 1、单 CTA、单 tile；在每个 phase 写 debug state 到独立 global buffer。不要在等待循环中用大量 `printf` 改变调度后误以为修复。
 
-## 3.13.7 “正确但不快”的排查
+## 5.13.7 “正确但不快”的排查
 
 | 现象 | 可能原因 | 验证 |
 |---|---|---|
@@ -132,7 +132,7 @@ cluster 中某 CTA 提前退出
 | sub-byte 无收益 | unpack/layout/epilogue 成瓶颈 | 分阶段 microbenchmark |
 | bulk reduce 慢 | contention/atomic destination 热点 | 改变 destination 分片 |
 
-## 3.13.8 建议 benchmark 方式
+## 5.13.8 建议 benchmark 方式
 
 1. warm-up；
 2. CUDA event 统计多次迭代；
@@ -142,7 +142,7 @@ cluster 中某 CTA 提前退出
 6. 防止编译器消除结果；
 7. 将 descriptor 构建排除在 kernel steady-state 时间外，除非业务确实每次重建。
 
-## 3.13.9 Code review 清单
+## 5.13.9 Code review 清单
 
 - [ ] `-arch` 与实际 GPU 匹配；
 - [ ] descriptor 维度顺序、byte stride 正确；
@@ -159,7 +159,7 @@ cluster 中某 CTA 提前退出
 - [ ] 生成 PTX/SASS 与预期一致；
 - [ ] 有普通路径 baseline 和 profile 证据。
 
-## 3.13.10 参考资料
+## 5.13.10 参考资料
 
 - [PTX ISA 9.3](https://docs.nvidia.com/cuda/parallel-thread-execution/)
 - [CUDA C++ Programming Guide：Asynchronous Data Copies](https://docs.nvidia.com/cuda/cuda-c-programming-guide/#asynchronous-data-copies)
@@ -169,6 +169,6 @@ cluster 中某 CTA 提前退出
 - [Controlling Data Movement on Ampere](https://developer.nvidia.com/blog/controlling-data-movement-to-boost-performance-on-ampere-architecture/)
 - [CUTLASS documentation](https://docs.nvidia.com/cutlass/)
 
-知识库内继续阅读：[第九部分 SASS](../part09-sass.md)、[第十一部分性能优化](../part11-performance-optimization.md)、[第十二部分 Kernel 源码分析](../part12-kernel-source-analysis.md)。
+知识库内继续阅读：[第十部分 SASS](../part10-sass.md)、[第十一部分性能优化](../part11-performance-optimization.md)、[第十二部分 Kernel 源码分析](../part12-kernel-source-analysis.md)。
 
-返回：[第三部分总览](00-overview.md)。
+返回：[第五部分总览](00-overview.md)。

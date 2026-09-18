@@ -1,8 +1,8 @@
-# 5.6 Part 5：Blackwell —— TMEM、`tcgen05` 与 block scaling
+# 6.6 Part 6：Blackwell —— TMEM、`tcgen05` 与 block scaling
 
 > “Blackwell”不是一套单一的可编程 Tensor ISA。本章先分数据中心与消费级路径，再讨论指令。
 
-## 5.6.1 必须先区分目标
+## 6.6.1 必须先区分目标
 
 | 目标 | 核心 Tensor 路径 | 能否使用 TMEM/`tcgen05` |
 |---|---|---|
@@ -11,7 +11,7 @@
 
 将 `tcgen05.*` 编译到 `sm_120` 是错误方向；首先让 `-arch` 和 PTX ISA 决定可用路径。
 
-## 5.6.2 为什么需要 TMEM
+## 6.6.2 为什么需要 TMEM
 
 Hopper WGMMA 的 accumulator 位于寄存器。tile 增大后，accumulator 消耗更多寄存器，降低 occupancy 或限制可选 tile。数据中心 Blackwell 引入 Tensor Memory（TMEM），让 Tensor Core 累加结果驻留在专用片上空间：
 
@@ -22,7 +22,7 @@ Blackwell DC：shared operand → tcgen05 → TMEM accumulator → ld → regist
 
 这并不等价于“TMEM 是普通 Shared Memory”：它有显式分配/释放、特定访问指令和严格的 Tensor pipeline 同步要求。
 
-## 5.6.3 `tcgen05` 指令族如何使用
+## 6.6.3 `tcgen05` 指令族如何使用
 
 按生命周期理解，不要孤立背 mnemonic：
 
@@ -50,7 +50,7 @@ alloc TMEM
 
 真实 `tcgen05` operand list、CTA group 限制、shape、scale 以及 fence/wait 形式会随 PTX ISA 版本变化。上图是协议框架，不是可复制的 PTX 程序；手写前必须查当前 Toolkit 的 PTX ISA。
 
-## 5.6.4 Single Thread Issue、CTA group、register group
+## 6.6.4 Single Thread Issue、CTA group、register group
 
 某些 `tcgen05.mma` 变体可由单个线程发起。原因是输出位于 TMEM，而不再固定属于发起 Warpgroup 的寄存器 tuple。这只意味着**发起责任**可解耦；并不表示：
 
@@ -62,7 +62,7 @@ alloc TMEM
 
 CTA group 和 register group 是目标指令的资源/协作约束，不能自行推广为 CUDA 通用同步原语。详见第十三部分 13.4。
 
-## 5.6.5 FP4、MXFP 与 block scaling
+## 6.6.5 FP4、MXFP 与 block scaling
 
 FP4/FP8 等低精度输入必须配合 scale 才能覆盖实际张量的局部数值范围。程序层面要将 scale 当作 operand 的一部分：
 
@@ -74,7 +74,7 @@ FP4/FP8 等低精度输入必须配合 scale 才能覆盖实际张量的局部�
 
 不要假设“FP4”在所有库/硬件上的格式、block 大小或精度相同；明确格式、scale 类型、layout、accumulator 和误差标准。
 
-## 5.6.6 消费级 `sm_120` 的正确学习路径
+## 6.6.6 消费级 `sm_120` 的正确学习路径
 
 `sm_120` 没有 TMEM/`tcgen05`，应学习 `mma.sync.aligned.block_scale` 等可用 warp MMA 变体：
 

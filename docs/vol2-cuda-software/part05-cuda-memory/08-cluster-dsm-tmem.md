@@ -1,8 +1,8 @@
-# 3.10–3.11 Cluster/DSM 与 Blackwell TMEM：TMA 的上下游
+# 5.10–5.11 Cluster/DSM 与 Blackwell TMEM：TMA 的上下游
 
-> Cluster 的**执行层级**见[第二部分 2.2.4](../part02-cuda-programming-model.md)；`cg::this_cluster()` API 见[第七部分 7.4](../part07-cuda-cpp-api.md)；`cluster.sync()` 与可见性见[第十三部分 13.1.3](../part13-synchronization-handbook/01-execution-barriers.md)。**本节回答 Memory Hierarchy 问题：DSM 是什么、怎么寻址、性能如何。**
+> Cluster 的**执行层级**见[第四部分 2.2.4](../part04-cuda-programming-model.md)；`cg::this_cluster()` API 见[第八部分 7.4](../part08-cuda-cpp-api.md)；`cluster.sync()` 与可见性见[第十三部分 13.1.3](../part13-synchronization-handbook/01-execution-barriers.md)。**本节回答 Memory Hierarchy 问题：DSM 是什么、怎么寻址、性能如何。**
 
-## 3.10.1 TMA 解决搬运，不解决所有存储问题
+## 5.10.1 TMA 解决搬运，不解决所有存储问题
 
 完整 Tensor pipeline 有三段：
 
@@ -15,7 +15,7 @@ global tensor
 
 Hopper 的 Cluster/DSM 扩大 shared operand 的复用范围；Blackwell DC 的 TMEM 改变 accumulator 的存放位置。它们与 TMA 协同，但不是 TMA 本身。
 
-## 3.10.2 Thread Block Cluster（记忆点，详解在 Part 02）
+## 5.10.2 Thread Block Cluster（记忆点，详解在 Part 04）
 
 普通 CTA 可独立调度，无法假定同时驻留。Cluster 增加调度保证：一组 CTA 被共同调度到可低延迟通信的硬件范围，从而才能讨论 DSM 与 cluster barrier。
 
@@ -26,7 +26,7 @@ __global__ void __cluster_dims__(2, 1, 1) kernel(...);
 
 合法 cluster 大小见设备属性。本文件不再重复执行模型细节。
 
-## 3.10.3 Distributed Shared Memory（DSM）
+## 5.10.3 Distributed Shared Memory（DSM）
 
 ### 为什么需要 DSM？
 
@@ -117,7 +117,7 @@ cluster.sync(); // peer 完成访问后，owner 才能退出或复用该 storage
 3. `map_shared_rank` 是地址翻译 API，**不是** barrier，也不发布任意 payload；
 4. rank 必须落在 `[0, cluster.num_blocks())`，且对应 CTA 仍存活。
 
-API 细节见[第七部分 `cluster_group`](../part07-cuda-cpp-api.md)；barrier 语义见[第十三部分](../part13-synchronization-handbook/01-execution-barriers.md)。
+API 细节见[第八部分 `cluster_group`](../part08-cuda-cpp-api.md)；barrier 语义见[第十三部分](../part13-synchronization-handbook/01-execution-barriers.md)。
 
 ### DSM 性能模型（选型）
 
@@ -128,7 +128,7 @@ API 细节见[第七部分 `cluster_group`](../part07-cuda-cpp-api.md)；barrier
 | 任意 CTA、无共同驻留保证 | Global + device-scope atomic/fence，或拆 kernel |
 | 把所有跨 CTA 通信都改 DSM | 通常错误：remote 竞争与生命周期复杂度上升 |
 
-## 3.10.4 TMA multicast 为什么依赖 Cluster
+## 5.10.4 TMA multicast 为什么依赖 Cluster
 
 多个 CTA 需要同一个 A tile：
 
@@ -147,7 +147,7 @@ multicast：
 
 目标仍是每个 CTA 的物理 shared buffer，因此需要 cluster topology、CTA mask、remote address/barrier 与生命周期规则。收益大小取决于原请求是否命中 L2、cluster 复用率和 multicast fan-out。
 
-## 3.10.5 Blackwell CTA pair
+## 5.10.5 Blackwell CTA pair
 
 数据中心 Blackwell 的 CTA pair 将两个 CTA/SM 组织成更紧密的 Tensor 协作单元。TMA 的 `.cta_group::2`、`tcgen05` CTA group 与 TMEM allocation 可以围绕 pair 建 pipeline。
 
@@ -159,7 +159,7 @@ multicast：
 
 三者可能重叠，但语义不能互换。
 
-## 3.11.1 TMEM 为什么出现
+## 5.11.1 TMEM 为什么出现
 
 Hopper WGMMA accumulator 位于 register：
 
@@ -179,7 +179,7 @@ shared A/B → tcgen05 → TMEM accumulator
 
 TMEM 是 Tensor pipeline 的专用片上空间，不是可用普通指针读写的 shared memory。
 
-## 3.11.2 TMEM 生命周期
+## 5.11.2 TMEM 生命周期
 
 ```text
 tcgen05.alloc
@@ -200,7 +200,7 @@ tcgen05.alloc
 - `tcgen05` completion 回答 Tensor operation 是否产出 TMEM；
 - CTA barrier 只回答线程会合及其定义的可见性。
 
-## 3.11.3 `tcgen05.cp` 与 TMA 的区别
+## 5.11.3 `tcgen05.cp` 与 TMA 的区别
 
 - TMA：主要连接 global 与 shared/cluster shared，TensorMap 负责多维地址和布局；
 - `tcgen05.cp`：在 Tensor/TMEM 规定的片上路径中搬运矩阵或 scale-factor 数据；
@@ -212,7 +212,7 @@ tcgen05.alloc
 global --TMA--> shared --tcgen05.cp/mma--> TMEM --tcgen05.ld--> register
 ```
 
-## 3.11.4 数据中心与消费级 Blackwell 分叉
+## 5.11.4 数据中心与消费级 Blackwell 分叉
 
 | 目标 | TMA/TMEM 结论 |
 |---|---|
@@ -221,7 +221,7 @@ global --TMA--> shared --tcgen05.cp/mma--> TMEM --tcgen05.ld--> register
 
 `sm_120` 应沿 `mma.sync` block-scale、普通 shared/register 与该目标实际支持的 copy 指令学习。编译时不要把 `-arch=sm_100a` 产物拿到 `sm_120` 运行。
 
-## 3.11.5 一个跨代总表
+## 5.11.5 一个跨代总表
 
 | 代际 | Operand 搬运 | Tensor 计算 | Accumulator | 跨 CTA 复用 |
 |---|---|---|---|---|
@@ -230,6 +230,6 @@ global --TMA--> shared --tcgen05.cp/mma--> TMEM --tcgen05.ld--> register
 | Blackwell DC | 扩展 TMA + CTA pair | `tcgen05` | TMEM | Cluster + CTA pair |
 | Blackwell `sm_120` | 按该 target 可用 copy 路径 | block-scale `mma.sync` | register | 不按 DC 路径推断 |
 
-`tcgen05` operand、TMEM 与 `sm_120` 分叉见[第五部分 Blackwell Tensor Core](../part05-tensor-core-handbook/06-blackwell-tcgen05.md)；Tensor completion 与 proxy ordering 见[第十三部分同步手册](../part13-synchronization-handbook/04-tensor-synchronization.md)。
+`tcgen05` operand、TMEM 与 `sm_120` 分叉见[第六部分 Blackwell Tensor Core](../part06-tensor-core-handbook/06-blackwell-tcgen05.md)；Tensor completion 与 proxy ordering 见[第十三部分同步手册](../part13-synchronization-handbook/04-tensor-synchronization.md)。
 
 下一篇：[正确性与性能诊断](09-debug-performance.md)。
