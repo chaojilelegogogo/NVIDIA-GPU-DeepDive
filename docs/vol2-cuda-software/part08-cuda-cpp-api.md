@@ -40,7 +40,7 @@ Stream 已在第四部分讲过语义。这里补充 **CUDA Graph**：
 
 **Why 出现**：早期 CUDA 只有两种粒度的同步——隐式的 Warp 锁步（Volta 之后不再安全）和 `__syncthreads()`（整个 Block）。很多算法需要**灵活可组合的线程分组**：Warp 子集、整个 Grid，以及 Hopper 起的 **Thread Block Cluster**。
 
-Cooperative Groups 回答的是：**CUDA API 如何表达硬件协作能力**。执行层级见[第四部分 2.2.4](part04-cuda-programming-model.md)；DSM 见[第五部分 3.10](part05-cuda-memory/08-cluster-dsm-tmem.md)；barrier 语义见[第十三部分](part13-synchronization-handbook/01-execution-barriers.md)。
+Cooperative Groups 回答的是：**CUDA API 如何表达硬件协作能力**。执行层级见[第四部分 4.2.4](part04-cuda-programming-model.md)；DSM 见[第五部分 5.10](part05-cuda-memory/08-cluster-dsm-tmem.md)；barrier 语义见[第十三部分](part13-synchronization-handbook/01-execution-barriers.md)。
 
 ### 8.4.1 `thread_block`
 
@@ -192,7 +192,7 @@ nvcc -arch=sm_90a -cubin kernel.cu -o kernel.cubin
 cuobjdump -sass kernel.cubin
 ```
 
-对一个使用 `cuda::memcpy_async` 的简单 kernel，满足架构、对齐和 API 前提时，PTX **可能**出现 `cp.async.cg.shared.global` 及配套 group 指令，Ampere SASS 常见 `LDGSTS`。对 WMMA，PTX 可出现 `wmma.*`，也可能被编译器降低为其它相关 MMA 形式；目标 SASS 常见 `HMMA` 系列。应将这些视为指定 Toolkit/target 下的实测结果，而非稳定的一一映射；完整验证流程见第六部分 5.7 节。
+对一个使用 `cuda::memcpy_async` 的简单 kernel，满足架构、对齐和 API 前提时，PTX **可能**出现 `cp.async.cg.shared.global` 及配套 group 指令，Ampere SASS 常见 `LDGSTS`。对 WMMA，PTX 可出现 `wmma.*`，也可能被编译器降低为其它相关 MMA 形式；目标 SASS 常见 `HMMA` 系列。应将这些视为指定 Toolkit/target 下的实测结果，而非稳定的一一映射；完整验证流程见第六部分 6.7 节。
 
 ## 8.8 小结
 

@@ -13,7 +13,7 @@ __global__ void vecAdd(const float* a, const float* b, float* c, int n) {
 
 - **CUDA 层面**：每个线程负责一个元素，索引计算体现第四部分讲的 Grid/Block/Thread 映射。
 - **PTX 层面**：`ld.global.f32` ×2、`add.f32`、`st.global.f32`，外加边界判断的 `setp`/`@p bra`。
-- **SASS 层面**：`LDG.E` ×2、`FADD`、`STG.E`，配合谓词或分支处理越界判断（第十部分 9.2.1 谓词化）。
+- **SASS 层面**：`LDG.E` ×2、`FADD`、`STG.E`，配合谓词或分支处理越界判断（第十部分 10.2.1 谓词化）。
 - **Hardware Pipeline**：这是一个**极端 Memory Bound**案例（第一部分 1.6）——1 次加法配 3 次 4 字节访存，算术强度 AI = 1 FLOP / 12 Bytes，远低于 Ridge Point。性能完全由 Global Memory 带宽决定，即使把 `FADD` 换成更复杂的运算，总耗时几乎不变（因为瓶颈根本不在 ALU）。**优化空间**：用 `float4` 向量化访存（一次 `LDG.128` 顶 4 次 `LDG.E`），减少指令数和事务次数，是这个 kernel 唯一有意义的优化方向。
 
 ## 12.2 Reduce：Warp 级归约与 Shuffle 的应用
@@ -39,23 +39,23 @@ __global__ void reduceKernel(const float* in, float* out, int n) {
     if (wid == 0) {
         sum = (lane < blockDim.x / 32) ? warpSums[lane] : 0;
         sum = warpReduceSum(sum);
-        if (lane == 0) atomicAdd(out, sum);   // 跨 Block 归约，用原子操作（第七部分 6.5）
+        if (lane == 0) atomicAdd(out, sum);   // 跨 Block 归约，用原子操作（第七部分 7.5）
     }
 }
 ```
 
-- **对应关系**：`__shfl_down_sync` → PTX `shfl.sync.down.b32` → SASS `SHFL.DOWN`（第七部分 6.1.1）。这条链路把 Warp 内 5 轮（`log2(32)`）归约的延迟压到最低（不经过 Shared Memory）。
-- **Hardware Pipeline**：Warp 内归约的 5 次 Shuffle 是纯寄存器到寄存器的操作，几乎没有 Scoreboard 等待；跨 Warp 归约必须落到 Shared Memory + `bar.sync`，是 Block 级同步开销的直接体现（第四部分 2.10）；最终跨 Block 归约用 `atomicAdd`（第七部分 6.5），代价最高但作用范围也最广。这个 kernel 是"三层同步开销递增"（Warp/Block/Grid）的完美教学案例。
+- **对应关系**：`__shfl_down_sync` → PTX `shfl.sync.down.b32` → SASS `SHFL.DOWN`（第七部分 7.1.1）。这条链路把 Warp 内 5 轮（`log2(32)`）归约的延迟压到最低（不经过 Shared Memory）。
+- **Hardware Pipeline**：Warp 内归约的 5 次 Shuffle 是纯寄存器到寄存器的操作，几乎没有 Scoreboard 等待；跨 Warp 归约必须落到 Shared Memory + `bar.sync`，是 Block 级同步开销的直接体现（第四部分 4.10）；最终跨 Block 归约用 `atomicAdd`（第七部分 7.5），代价最高但作用范围也最广。这个 kernel 是"三层同步开销递增"（Warp/Block/Grid）的完美教学案例。
 
 ## 12.3 Scan（前缀和）：依赖链与 Work-Efficient 算法
 
-Scan 相比 Reduce 的关键难点是**输出的每个元素都依赖前面所有元素**，朴素实现会引入严重的串行依赖链。经典 Blelloch Work-Efficient 算法用"Up-Sweep（归约）+ Down-Sweep（分发）"两阶段树形结构，把串行深度从 `O(n)` 降到 `O(log n)`，代价是引入了 Bank Conflict 风险（树形访问模式天然容易产生固定 stride 的 Shared Memory 访问）——因此教学实现通常会加上第五部分 3.4 节讲的 Padding 技巧来规避。这个案例的价值在于展示**算法层面的并行深度优化，和硬件层面的访存效率优化，往往需要同时兼顾**。
+Scan 相比 Reduce 的关键难点是**输出的每个元素都依赖前面所有元素**，朴素实现会引入严重的串行依赖链。经典 Blelloch Work-Efficient 算法用"Up-Sweep（归约）+ Down-Sweep（分发）"两阶段树形结构，把串行深度从 `O(n)` 降到 `O(log n)`，代价是引入了 Bank Conflict 风险（树形访问模式天然容易产生固定 stride 的 Shared Memory 访问）——因此教学实现通常会加上第五部分 5.4 节讲的 Padding 技巧来规避。这个案例的价值在于展示**算法层面的并行深度优化，和硬件层面的访存效率优化，往往需要同时兼顾**。
 
 ## 12.4 Transpose：Coalescing 与 Bank Conflict 的直接博弈
 
 ```cuda
 __global__ void transposeCoalesced(float* out, const float* in, int width, int height) {
-    __shared__ float tile[32][33];   // +1 padding 消除 bank conflict（第五部分 3.4）
+    __shared__ float tile[32][33];   // +1 padding 消除 bank conflict（第五部分 5.4）
     int x = blockIdx.x * 32 + threadIdx.x;
     int y = blockIdx.y * 32 + threadIdx.y;
     tile[threadIdx.y][threadIdx.x] = in[y * width + x];   // 合并读
@@ -66,15 +66,15 @@ __global__ void transposeCoalesced(float* out, const float* in, int width, int h
 }
 ```
 
-- **矛盾的根源**：矩阵转置天然要求"按行读、按列写"（或反过来），如果直接在 Global Memory 上做，读或写两者中必有一个是不连续的（破坏第五部分 3.2 的 Coalescing）。
-- **解决方案**：先把一个 tile 完整搬进 Shared Memory（一次合并读），在片上完成转置（`tile[threadIdx.x][threadIdx.y]` 这种转置访问只发生在快得多的 Shared Memory 上），再合并写出——这是"用 Shared Memory 作为片上转置缓冲区，把 Global Memory 的非合并访问转化为 Shared Memory 的访问模式问题"这一思路的经典应用，而 Shared Memory 上的转置访问模式又引入了新的 Bank Conflict 风险，需要 `[32][33]` 的 Padding 来化解——这个 kernel 是第五部分 3.2~3.4 三节内容首尾呼应的最佳教学案例。
+- **矛盾的根源**：矩阵转置天然要求"按行读、按列写"（或反过来），如果直接在 Global Memory 上做，读或写两者中必有一个是不连续的（破坏第五部分 5.2 的 Coalescing）。
+- **解决方案**：先把一个 tile 完整搬进 Shared Memory（一次合并读），在片上完成转置（`tile[threadIdx.x][threadIdx.y]` 这种转置访问只发生在快得多的 Shared Memory 上），再合并写出——这是"用 Shared Memory 作为片上转置缓冲区，把 Global Memory 的非合并访问转化为 Shared Memory 的访问模式问题"这一思路的经典应用，而 Shared Memory 上的转置访问模式又引入了新的 Bank Conflict 风险，需要 `[32][33]` 的 Padding 来化解——这个 kernel 是第五部分 5.2~3.4 三节内容首尾呼应的最佳教学案例。
 
 ## 12.5 GEMM：从朴素实现到分块+双缓冲
 
 朴素 GEMM（每个线程独立从 Global Memory 读取所需的一整行/一整列）几乎必然是极度 Memory Bound（第一部分 1.6 的 Roofline 边界情形）。标准优化路径：
 
 ```
-Step 1: Tiling（分块）        — 把 A、B 切成 tile，先搬进 Shared Memory 复用（第五部分 3.6）
+Step 1: Tiling（分块）        — 把 A、B 切成 tile，先搬进 Shared Memory 复用（第五部分 5.6）
 Step 2: Register Blocking     — 每个线程负责一个小的输出子块（如 8x8），进一步提高寄存器复用率、
                                  减少 Shared Memory 访问次数
 Step 3: Vectorized Load       — 用 float4/LDG.128 加载 tile 数据
@@ -101,7 +101,7 @@ __global__ void gemmKernel(half* A, half* B, float* C, int M, int N, int K) {
 
 - **Hardware Pipeline 全景**：这个 kernel 同时用到了第五部分（`cp.async` 搬运）、第二部分（Double Buffer/Producer-Consumer）、第六部分（`ldmatrix`+`mma.sync`）三部分的全部核心机制，是从"教学 kernel"过渡到"工业级 kernel"的分水岭案例。GEMM 也是 Roofline 模型（第一部分 1.6）中 **Compute Bound** 的典型代表——当矩阵规模足够大时，数据复用率极高，瓶颈会真正落在 Tensor Core 的算力上，这也是为什么 Tensor Core 的历代演进（第六部分）几乎都以 GEMM 作为衡量基准。
 
-> 此骨架省略了 operand layout、`ldmatrix` address mapping、异步完成协议和 epilogue 分片；应作为数据流教学而非可直接编译的完整 kernel。自建 GEMM 的分阶段路线和 CUDA→PTX→SASS 验证见第六部分 5.7 节。
+> 此骨架省略了 operand layout、`ldmatrix` address mapping、异步完成协议和 epilogue 分片；应作为数据流教学而非可直接编译的完整 kernel。自建 GEMM 的分阶段路线和 CUDA→PTX→SASS 验证见第六部分 6.7 节。
 
 ## 12.6 LayerNorm：跨线程规约 + 数值稳定性
 
@@ -118,8 +118,8 @@ FlashAttention 要解决的核心问题：朴素 Attention（`softmax(QK^T/√d)
 **FlashAttention 的核心思路**：用 12.7 节的 Online Softmax，把 Q、K、V 分块（Tiling），在 Shared Memory/寄存器中逐块计算 `QK^T`、逐块更新 Softmax 统计量、逐块累加 `×V` 的结果，**全程不把完整的 Attention Score 矩阵写回 Global Memory**——这是第十一部分 11.8 节 Kernel Fusion 思想最具代表性的工业级应用。
 
 FlashAttention-2/3 的演进路线，恰好是第三部分讲的硬件时间线在具体算子上的投影：
-- **FlashAttention-1/2（Ampere 时代）**：核心依赖 `mma.sync`/`ldmatrix`（第六部分 5.4）与 `cp.async` 双缓冲（第五部分 3.8），重点优化了循环顺序（外层 K/V、内层 Q，减少非矩阵乘法运算的比重）和 Warp 内的任务划分,以尽量减少 Shared Memory 读写和非 Tensor Core 计算的占比。
-- **FlashAttention-3（Hopper 时代）**：全面转向 Warp Specialization（第二部分 4.8）——用专门的 Warp Group 发起 TMA 加载 K/V 分块，另一组 Warp Group 专职发起 WGMMA 做 `QK^T` 和 `×V` 的矩阵乘加，并利用 WGMMA 的异步特性，让 Softmax 的（相对）低吞吐标量计算能与下一块的 Tensor Core 矩阵乘加重叠执行，同时探索了利用 FP8 精度进一步提升吞吐。
+- **FlashAttention-1/2（Ampere 时代）**：核心依赖 `mma.sync`/`ldmatrix`（第六部分 6.4）与 `cp.async` 双缓冲（第五部分 5.8），重点优化了循环顺序（外层 K/V、内层 Q，减少非矩阵乘法运算的比重）和 Warp 内的任务划分,以尽量减少 Shared Memory 读写和非 Tensor Core 计算的占比。
+- **FlashAttention-3（Hopper 时代）**：全面转向 Warp Specialization（第二部分 2.8）——用专门的 Warp Group 发起 TMA 加载 K/V 分块，另一组 Warp Group 专职发起 WGMMA 做 `QK^T` 和 `×V` 的矩阵乘加，并利用 WGMMA 的异步特性，让 Softmax 的（相对）低吞吐标量计算能与下一块的 Tensor Core 矩阵乘加重叠执行，同时探索了利用 FP8 精度进一步提升吞吐。
 
 ## 12.9 CUTLASS GEMM：工业级模板库的设计哲学
 
@@ -130,7 +130,7 @@ CUTLASS 是 NVIDIA 官方开源的高性能线性代数模板库，也是理解"
 - **Pipeline 抽象**：CUTLASS 提供 `PipelineTmaAsync` 等类，直接封装了第二部分讲的多级流水线 Producer/Consumer 协议，底层对应 TMA + `mbarrier`。
 - 建议的阅读路径：先读 CUTLASS 官方仓库中面向教学的 `examples/`（从简单的 SIMT GEMM 到 Ampere `cp.async` GEMM，再到 Hopper `wgmma`+TMA 的 GEMM），配合 Colfax Research 发布的 Hopper/Blackwell CUTLASS 系列技术博客（第六部分调研中引用过），再深入库内部的模板实现。
 
-> 如何从 Device GEMM 沿着 Collective、Tiled MMA、MMA Atom 追到 PTX，以及如何安排 1→7 版自建 GEMM，见第六部分 5.7 节。
+> 如何从 Device GEMM 沿着 Collective、Tiled MMA、MMA Atom 追到 PTX，以及如何安排 1→7 版自建 GEMM，见第六部分 6.7 节。
 
 ## 12.10 FlashMLA：面向 MLA 注意力变体的极致优化
 
@@ -141,7 +141,7 @@ FlashMLA（DeepSeek 开源）是针对 **Multi-Head Latent Attention（MLA）** 
 DeepGEMM（DeepSeek 开源）是一个专注 FP8 GEMM 的轻量级库，两个值得关注的设计点：
 
 1. **细粒度量化（Fine-grained Scaling）**：不同于对整个矩阵用单一缩放因子，DeepGEMM 采用更细颗粒度（如按 tile/按行）的缩放策略，在使用 FP8 这种动态范围有限的格式时，更好地控制量化误差——这是第六部分讲的"精度持续下探必然伴随更精细的缩放机制"（NVFP4 的两级缩放是这一思路的进一步延伸）这一规律在 FP8 阶段的体现。
-2. **运行时 JIT 编译**：DeepGEMM 大量使用运行时 JIT（对照第九部分 8.7）而非预编译所有 kernel 变体，针对具体的矩阵形状在运行时生成/编译最优化的 kernel，是"编译期不知道所有可能的矩阵形状，但运行时知道"这一实际工程约束下,把第九部分讲的 JIT 机制用到极致的例子。
+2. **运行时 JIT 编译**：DeepGEMM 大量使用运行时 JIT（对照第九部分 9.7）而非预编译所有 kernel 变体，针对具体的矩阵形状在运行时生成/编译最优化的 kernel，是"编译期不知道所有可能的矩阵形状，但运行时知道"这一实际工程约束下,把第九部分讲的 JIT 机制用到极致的例子。
 
 ## 12.12 cuBLAS / cuDNN：黑盒库背后是同一套原理
 

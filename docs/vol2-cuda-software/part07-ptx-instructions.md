@@ -53,7 +53,7 @@ PTX（Parallel Thread Execution）是 NVIDIA 定义的一种**虚拟指令集架
 | `cp.async.bulk.tensor.*` (TMA) | 硬件 DMA 批量张量拷贝（第五部分已详述） | Hopper 引入，去掉逐线程地址生成 |
 | `prefetch` / `prefetch.global.L2` | 软件预取提示，把数据提前取入指定层级 Cache 但不阻塞、不实际使用数据 | 用于隐藏已知未来会访问、但当前还不需要用的数据的延迟，是编译器/程序员对 Cache 替换策略的显式提示 |
 
-`ld.global` 的缓存修饰符值得展开一下，因为它直接体现"程序员可以对本应透明的 Cache 做显式提示"这一 GPU 特色（对应第五部分 3.1.7）：
+`ld.global` 的缓存修饰符值得展开一下，因为它直接体现"程序员可以对本应透明的 Cache 做显式提示"这一 GPU 特色（对应第五部分 5.1.7）：
 
 - `.ca`（cache at all levels）：默认行为，尝试写入 L1 和 L2。
 - `.cg`（cache at global level）：绕过 L1，只写入 L2——用于预期这份数据不会被同一 SM 上其它 Warp 复用、或者不希望它把 L1 中更有价值的数据挤出去的场景。
@@ -65,7 +65,7 @@ PTX（Parallel Thread Execution）是 NVIDIA 定义的一种**虚拟指令集架
 | 指令 | 引入架构 | 协作颗粒度 | 操作数来源 | 备注 |
 |---|---|---|---|---|
 | `mma.sync` | Volta 起 | Warp | 寄存器 | 原子形状从 Volta 的 `m8n8k4` 逐步扩展到 Ampere 的 `m16n8k*` |
-| `ldmatrix` | Ampere | Warp | Shared Memory → 寄存器 | 专为 Tensor Core 操作数排布定制的加载指令（第六部分 5.4） |
+| `ldmatrix` | Ampere | Warp | Shared Memory → 寄存器 | 专为 Tensor Core 操作数排布定制的加载指令（第六部分 6.4） |
 | `wgmma.mma_async` | Hopper | Warp Group (128线程) | Shared Memory（描述符）/寄存器 | 异步，需配合 `fence`/`commit_group`/`wait_group` |
 | `tcgen05.mma` / `.ld` / `.st` / `.cp` / `.alloc` | Blackwell（**仅数据中心** `sm_100a`/`sm_103a`） | 单线程可发起 | Shared Memory | 结果写入 TMEM，需要显式分配/释放 TMEM 空间；**消费级 Blackwell（`sm_120`，RTX 50 系列）不支持这组指令**，仍走 `mma.sync.aligned.block_scale` |
 

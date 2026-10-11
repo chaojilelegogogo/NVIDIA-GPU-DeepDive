@@ -22,7 +22,7 @@ Block（Thread Block，硬件/PTX 层面称为 CTA，Cooperative Thread Array）
 2. **`__syncthreads()` 依赖 SM 内部的硬件 Barrier 单元**。Block 内同步用的硬件屏障电路是 SM 局部的，跨 SM 做同步需要通过 L2/Global Memory 这种高延迟路径，代价比片内同步高几个数量级，会摧毁 Block 内同步"轻量、高频"的设计假设。
 3. **Warp Scheduler 和寄存器堆的资源分配以 SM 为单位**。一个 Block 需要的寄存器、Shared Memory、Warp 槽位都是在 Block 被分发到某个 SM 时，一次性从该 SM 的资源池中"预留"出来的（占用率计算就是基于这个事实，见 2.8 节）。如果 Block 可以跨 SM，这种"整块预留资源"的简单模型就会崩溃，硬件调度会复杂得多。
 
-（注：Hopper 引入的 Thread Block Cluster 没有打破“单个 Block 属于单个 SM”这条基本规则；它是在这条规则之上叠加的可控协作范围。执行模型见 [2.2.4](#224-thread-block-clusterhopper)；DSM 见[第五部分 3.10](part05-cuda-memory/08-cluster-dsm-tmem.md)；`cluster.sync()` 见[第十三部分](part13-synchronization-handbook/01-execution-barriers.md)。）
+（注：Hopper 引入的 Thread Block Cluster 没有打破“单个 Block 属于单个 SM”这条基本规则；它是在这条规则之上叠加的可控协作范围。执行模型见 [2.2.4](#224-thread-block-clusterhopper)；DSM 见[第五部分 5.10](part05-cuda-memory/08-cluster-dsm-tmem.md)；`cluster.sync()` 见[第十三部分](part13-synchronization-handbook/01-execution-barriers.md)。）
 
 #### 4.2.2 Block 内的通信与同步原语
 
@@ -84,7 +84,7 @@ Cluster 内常用标识：
 - 过大的 cluster 会降低可调度性，可能降低占用；
 - **未**以 cluster 方式 launch 的普通 kernel，不能调用 `this_cluster()` 并假定 DSM 可用。
 
-本部分只回答“软件执行层级如何映射硬件调度”。DSM 地址与性能见[第五部分 3.10](part05-cuda-memory/08-cluster-dsm-tmem.md)；`cg::this_cluster()` API 见[第八部分 7.4](part08-cuda-cpp-api.md)；`cluster.sync()` 与 DSM 可见性见[第十三部分 13.1.3](part13-synchronization-handbook/01-execution-barriers.md)。
+本部分只回答“软件执行层级如何映射硬件调度”。DSM 地址与性能见[第五部分 5.10](part05-cuda-memory/08-cluster-dsm-tmem.md)；`cg::this_cluster()` API 见[第八部分 8.4](part08-cuda-cpp-api.md)；`cluster.sync()` 与 DSM 可见性见[第十三部分 13.1.3](part13-synchronization-handbook/01-execution-barriers.md)。
 
 ### 4.3 Thread：最小的逻辑执行单元
 
@@ -180,4 +180,4 @@ cudaDeviceSynchronize → 整个 Device 级同步，代价最高
 
 4. **为什么还要 Cluster？** 因为默认 Block 独立调度无法低成本复用相邻 tile；Cooperative Grid 又太重。Cluster 在不牺牲“单 Block 仍绑定单 SM”的前提下，给出可控的跨 SM 协作范围。
 
-下一部分（第五部分，CUDA Memory）将是全书篇幅最大、也是现代高性能 CUDA 开发中最重要的一部分——因为随着 Tensor Core 算力的指数级增长（第六部分），"如何以更少的代价把数据喂给计算单元"已经取代"如何多做算力"，成为决定 kernel 性能上限的第一因素。Cluster 之上的 DSM 地址与性能模型在第五部分 3.10 展开。
+下一部分（第五部分，CUDA Memory）将是全书篇幅最大、也是现代高性能 CUDA 开发中最重要的一部分——因为随着 Tensor Core 算力的指数级增长（第六部分），"如何以更少的代价把数据喂给计算单元"已经取代"如何多做算力"，成为决定 kernel 性能上限的第一因素。Cluster 之上的 DSM 地址与性能模型在第五部分 5.10 展开。

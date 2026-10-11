@@ -1,6 +1,6 @@
 # 5.10–5.11 Cluster/DSM 与 Blackwell TMEM：TMA 的上下游
 
-> Cluster 的**执行层级**见[第四部分 2.2.4](../part04-cuda-programming-model.md)；`cg::this_cluster()` API 见[第八部分 7.4](../part08-cuda-cpp-api.md)；`cluster.sync()` 与可见性见[第十三部分 13.1.3](../part13-synchronization-handbook/01-execution-barriers.md)。**本节回答 Memory Hierarchy 问题：DSM 是什么、怎么寻址、性能如何。**
+> Cluster 的**执行层级**见[第四部分 4.2.4](../part04-cuda-programming-model.md)；`cg::this_cluster()` API 见[第八部分 8.4](../part08-cuda-cpp-api.md)；`cluster.sync()` 与可见性见[第十三部分 13.1.3](../part13-synchronization-handbook/01-execution-barriers.md)。**本节回答 Memory Hierarchy 问题：DSM 是什么、怎么寻址、性能如何。**
 
 ## 5.10.1 TMA 解决搬运，不解决所有存储问题
 
