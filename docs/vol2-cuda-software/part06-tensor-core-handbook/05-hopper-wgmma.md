@@ -74,4 +74,4 @@ wait group；读取 register accumulator 做 epilogue
 
 TMA completion 与 WGMMA completion 是独立依赖，前者等 `mbarrier`，后者等 `wgmma.wait_group`。完整同步协议见[第十三部分 13.3](../part13-synchronization-handbook/03-async-pipelines.md)和[13.4](../part13-synchronization-handbook/04-tensor-synchronization.md)。
 
-下一篇：[Blackwell TMEM 和 `tcgen05`](06-blackwell-tcgen05.md)。
+下一篇：[Warp Specialization：把流水线角色分给不同的 Warp](06-warp-specialization.md)。

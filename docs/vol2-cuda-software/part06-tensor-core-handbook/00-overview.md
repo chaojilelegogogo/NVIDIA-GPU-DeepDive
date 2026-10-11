@@ -15,6 +15,8 @@ Part 5  Turing/Ampere：mma.sync、ldmatrix、cp.async
   ↓
 Part 2  Hopper：TMA、mbarrier、WGMMA、warpgroup
   ↓
+Part 2.5  Warp Specialization：把流水线角色分给不同的 Warp
+  ↓
 Part 6  Blackwell：TMEM、tcgen05、block scaling、CTA group
   ↓
 Part 7  CUDA → PTX → SASS：如何实证，而非猜测
@@ -47,8 +49,9 @@ Part 8  CUTLASS/CuTe 和七阶 GEMM 实战路线
 | [02-why-tensor-core.md](02-why-tensor-core.md) | 标量 FMA、Roofline、mixed precision |
 | [03-volta-wmma.md](03-volta-wmma.md) | WMMA API、fragment、Volta `mma.sync` |
 | [04-turing-ampere-mma.md](04-turing-ampere-mma.md) | `mma.sync`、`ldmatrix`、`cp.async` |
-| [05-hopper-wgmma.md](05-hopper-wgmma.md) | TMA、`mbarrier`、WGMMA、warp specialization |
-| [06-blackwell-tcgen05.md](06-blackwell-tcgen05.md) | TMEM、`tcgen05`、`sm_120` 分叉 |
-| [07-mapping-cutlass-gemm.md](07-mapping-cutlass-gemm.md) | CUDA/PTX/SASS、CUTLASS/CuTe、GEMM 实战 |
+| [05-hopper-wgmma.md](05-hopper-wgmma.md) | TMA、`mbarrier`、WGMMA、warpgroup |
+| [06-warp-specialization.md](06-warp-specialization.md) | Warp Specialization：角色划分、`setmaxnreg`、握手协议 |
+| [07-blackwell-tcgen05.md](07-blackwell-tcgen05.md) | TMEM、`tcgen05`、`sm_120` 分叉 |
+| [08-mapping-cutlass-gemm.md](08-mapping-cutlass-gemm.md) | CUDA/PTX/SASS、CUTLASS/CuTe、GEMM 实战 |
 
 同步协议不在本章重复展开：`cp.async`、TMA、WGMMA、`tcgen05` 的 wait/fence/transaction 语义请配合[第十三部分同步手册](../part13-synchronization-handbook/00-overview.md)阅读。

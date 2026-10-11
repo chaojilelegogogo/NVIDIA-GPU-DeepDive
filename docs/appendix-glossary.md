@@ -227,7 +227,8 @@
 - **WGMMA**：见 2.3 `wgmma.mma_async`。
 - **TMA Multicast**：TMA 的一次搬运广播到多个 Block（Cluster 内），依赖 DSM 的地址空间。见 Part 5 §5。
 - **DSM**（Distributed Shared Memory，分布式共享内存，Hopper）：让 Cluster 内的 Block 跨 SM 直接访问对方的 Shared Memory（`cluster.map_shared_rank`、`.shared::cluster`、`mapa`）。见 Part 5 §10、H100 手册。
-- **Warp Specialization**（Warp 专职化）：把生产者（搬运）Warp 组与消费者（计算）Warp 组分开专职各司其职的编程范式，Hopper 上用于最大化 Tensor Core 利用率。见 Part 2 §2.8、H100 手册。
+- **Warp Specialization**（Warp 专职化）：把生产者（搬运）Warp 组与消费者（计算）Warp 组分开专职各司其职的编程范式，Hopper 上用于最大化 Tensor Core 利用率。它不是一个指令或 API，而是 TMA + WGMMA + `mbarrier` + `setmaxnreg` 组合出的 kernel 组织结构，角色划分只提供服务、不提供同步。见 Part 6 §6.6（专章）、Part 2 §2.8。
+- **`setmaxnreg`**（动态寄存器配额调整）：Hopper（`sm_90a`）指令，在 kernel **运行期**按 Warp Group 重分配 CTA 内的寄存器总量，让生产者让出、消费者拿进（典型 `dec 40` / `inc 232`）。约束：以 Warp Group 为单位、全体线程集体执行且立即数一致、立即数为 8 的倍数、总量守恒、仅 `sm_90a`。见 Part 6 §6.6.3、Part 7 §7.7.1。
 - **TMEM**（Tensor Memory，张量内存，Blackwell）：数据中心 Blackwell 给 Tensor Core 配的专属累加器存储（256 KB/SM），把越来越大的 MMA 累加器从寄存器堆搬出来，是 `tcgen05` 结果落地的目标。见 B200 手册 §4.2、Part 5 §11。
 - **`tcgen05`**：见 2.3。
 - **CTA Pair**：见 2.2。

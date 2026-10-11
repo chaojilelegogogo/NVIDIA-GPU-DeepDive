@@ -99,7 +99,7 @@ H100 的硬件 Feature 可以归结为一条主线：**把计算（Tensor Core�
 | **mbarrier** | 异步完成信号（事务计数），替代 `bar.sync` | 支撑上面两者的异步语义 |
 | **Cluster + DSM** | 跨 SM 直接访问对方 Shared Memory | 问题 3（相邻 SM 无法共享）|
 
-这一套组合拳，就是后来 FlashAttention-3、CUTLASS 3.x 在 Hopper 上跑出高 Tensor Core 利用率的硬件基础（Warp Specialization 范式），详见 Part 2 §2.8、Part 12。
+这一套组合拳，就是后来 FlashAttention-3、CUTLASS 3.x 在 Hopper 上跑出高 Tensor Core 利用率的硬件基础（Warp Specialization 范式），详见 Part 2 §2.8、[Part 6 §6.6](../../vol2-cuda-software/part06-tensor-core-handbook/06-warp-specialization.md)、Part 12。
 
 ## 4. 算力公式：从硬件单元推导 H100 峰值
 

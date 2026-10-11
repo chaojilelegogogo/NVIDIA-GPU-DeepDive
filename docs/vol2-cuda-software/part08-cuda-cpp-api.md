@@ -192,7 +192,7 @@ nvcc -arch=sm_90a -cubin kernel.cu -o kernel.cubin
 cuobjdump -sass kernel.cubin
 ```
 
-对一个使用 `cuda::memcpy_async` 的简单 kernel，满足架构、对齐和 API 前提时，PTX **可能**出现 `cp.async.cg.shared.global` 及配套 group 指令，Ampere SASS 常见 `LDGSTS`。对 WMMA，PTX 可出现 `wmma.*`，也可能被编译器降低为其它相关 MMA 形式；目标 SASS 常见 `HMMA` 系列。应将这些视为指定 Toolkit/target 下的实测结果，而非稳定的一一映射；完整验证流程见第六部分 6.7 节。
+对一个使用 `cuda::memcpy_async` 的简单 kernel，满足架构、对齐和 API 前提时，PTX **可能**出现 `cp.async.cg.shared.global` 及配套 group 指令，Ampere SASS 常见 `LDGSTS`。对 WMMA，PTX 可出现 `wmma.*`，也可能被编译器降低为其它相关 MMA 形式；目标 SASS 常见 `HMMA` 系列。应将这些视为指定 Toolkit/target 下的实测结果，而非稳定的一一映射；完整验证流程见第六部分 6.8 节。
 
 ## 8.8 小结
 

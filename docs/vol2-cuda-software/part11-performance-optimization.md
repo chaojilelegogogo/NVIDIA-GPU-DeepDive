@@ -40,7 +40,7 @@
 对照第三、四部分：
 
 - **Double/Triple Buffer**：用 `cuda::pipeline`（第八部分 8.5）或手写 `cp.async`/`mbarrier` 序列，构建搬运与计算重叠的软件流水线。级数（stage 数）的选择需要在"更深流水线掩盖更多延迟波动"和"更多 Shared Memory 占用挤压 Occupancy"之间权衡，通常通过实测在 2/3/4 级之间选择最优点。
-- **Warp Specialization**（Hopper 起，第二部分 2.8）：把生产者（TMA 搬运）和消费者（WGMMA 计算）分给不同 Warp Group，用 `setmaxnreg` 精细调配寄存器配额。
+- **Warp Specialization**（Hopper 起，[第六部分 6.6](part06-tensor-core-handbook/06-warp-specialization.md)；概念动机见第二部分 2.8）：把生产者（TMA 搬运）和消费者（WGMMA 计算）分给不同 Warp Group，用 `setmaxnreg` 精细调配寄存器配额。
 - **减少同步粒度**：优先用 `__syncwarp()` 而不是 `__syncthreads()`（如果逻辑上只需要 Warp 内同步），减少不必要的等待范围（对照第四部分 4.10 的同步代价分层）。
 
 ## 11.5 Occupancy 优化

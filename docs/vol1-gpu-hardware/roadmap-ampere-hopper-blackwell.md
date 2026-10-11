@@ -6,13 +6,13 @@
 
 ## 起点：Track 0 —— 在学 Ampere 之前，先确认这些基线知识
 
-在正式进入 Ampere 之前，确保你已经清楚以下"前 Ampere 基线"（对应 Volta/Turing，详见第六部分 6.3/5.4），因为 Ampere 的每一个新特性都是相对这个基线做的改进：
+在正式进入 Ampere 之前，确保你已经清楚以下"前 Ampere 基线"（对应 Volta/Turing，详见第六部分 6.3~6.4），因为 Ampere 的每一个新特性都是相对这个基线做的改进：
 
 - Tensor Core 从 Volta（2017）就存在了，最早的编程接口是 Warp 级的 `wmma`/`mma.sync`（原子形状 `m8n8k4`），只支持 FP16 输入（第六部分 6.3）。
 - 数据从 Global Memory 搬到 Shared Memory，在 Ampere 之前只有一种方式：`ld.global` 读入寄存器，再 `st.shared` 写出——**必须经过发起线程的寄存器**（第五部分 5.7）。
 - 没有软件可显式控制的"流水线"抽象，双缓冲需要程序员完全手写同步逻辑。
 
-如果这三点还不熟悉，建议先回读第六部分 6.3~5.4 和第五部分 5.7。
+如果这三点还不熟悉，建议先回读第六部分 6.3~6.4 和第五部分 5.6~5.7。
 
 ---
 
@@ -80,7 +80,7 @@ cuobjdump -sass gemm_mma.cubin | grep -E "HMMA|LDSM"
 
 **学什么**：Warp Group = 4 个连续 Warp（128 线程）作为一个整体去发起 Tensor Core 指令；`setmaxnreg.inc/dec` 动态寄存器配额调整；Warp Specialization（生产者 Warp Group 专职搬运、消费者 Warp Group 专职计算）的编程范式。
 
-**深度内容跳转**：第六部分 6.5 节；第二部分 2.8 节 Producer-Consumer 在 Warp Group 层面的硬件化。
+**深度内容跳转**：第六部分 6.5 节；**Warp Specialization 的完整机制（角色划分、`setmaxnreg` 五条硬约束与配额算术、`mbarrier` full/empty 握手、FA3/CUTLASS 角色实例）见[第六部分 6.6 专章](../vol2-cuda-software/part06-tensor-core-handbook/06-warp-specialization.md)**；概念动机见第二部分 2.8 节 Producer-Consumer 在 Warp Group 层面的硬件化。`setmaxnreg` 指令条目见第七部分 7.7.1。
 
 **为什么先学这个**：WGMMA 和后面的 TMA 都是围绕"以 Warp Group 为单位协作"这个新的组织方式设计的，不先建立这个概念，直接看 WGMMA 语法会觉得莫名其妙——为什么突然要求 128 个线程步调一致，而不是 32 个。
 
@@ -127,7 +127,7 @@ cuobjdump -sass gemm_mma.cubin | grep -E "HMMA|LDSM"
 
 ## Track 3：Blackwell（数据中心 B100/B200/B300，`sm_100a`；消费级 RTX 50 系列，`sm_120`）—— 累加器搬出寄存器 + 极致低精度
 
-> **在开始这个 Track 之前必须先明确一件事**：NVIDIA 用同一个"Blackwell"品牌名，卖两种设计差异很大的芯片。**下面 3.1（TMEM）和 3.3（新 SM Pipeline）只存在于数据中心 Blackwell（B100/B200/B300）**；如果你手上是 **RTX 5070/5080/5090（消费级 Blackwell，`sm_120`）**，这两节的内容在你的显卡上跑不起来（编译时用 `-arch=sm_120`，代码里不能出现 `tcgen05.*`），你能学到的是 3.2（第五代 Tensor Core 的 FP4/FP6 支持，消费级用 `mma.sync.aligned.block_scale` 实现同样的低精度收益）和 3.4 中不依赖 TMEM 的那部分指令。详见第五部分 5.11 节和第六部分 6.6 节的完整说明。
+> **在开始这个 Track 之前必须先明确一件事**：NVIDIA 用同一个"Blackwell"品牌名，卖两种设计差异很大的芯片。**下面 3.1（TMEM）和 3.3（新 SM Pipeline）只存在于数据中心 Blackwell（B100/B200/B300）**；如果你手上是 **RTX 5070/5080/5090（消费级 Blackwell，`sm_120`）**，这两节的内容在你的显卡上跑不起来（编译时用 `-arch=sm_120`，代码里不能出现 `tcgen05.*`），你能学到的是 3.2（第五代 Tensor Core 的 FP4/FP6 支持，消费级用 `mma.sync.aligned.block_scale` 实现同样的低精度收益）和 3.4 中不依赖 TMEM 的那部分指令。详见第五部分 5.11 节和第六部分 6.7 节的完整说明。
 
 ### 3.0 这一代要解决的核心问题
 
@@ -137,7 +137,7 @@ cuobjdump -sass gemm_mma.cubin | grep -E "HMMA|LDSM"
 
 **学什么**：TMEM 的物理组织（128 Lane × 最多 512 列，约 256KB/SM）、显式分配/释放（`tcgen05.alloc`/`dealloc`，编程模型更接近 Shared Memory 而不是寄存器）、`tcgen05.mma` 结果直接写入 TMEM、`tcgen05.ld`/`st`/`cp` 数据搬运。
 
-**深度内容跳转**：第五部分 5.11（完整 Why/What/How/Evolution）；第六部分 6.6 节。
+**深度内容跳转**：第五部分 5.11（完整 Why/What/How/Evolution）；第六部分 6.7 节。
 
 **承接关系（回应 Hopper 遗留问题 1）**：TMEM 直接解决"累加器持续膨胀、寄存器堆装不下"这个问题——把累加器从寄存器堆搬到一块专属的新存储里，寄存器堆不再需要为累加器预留空间。
 
@@ -147,7 +147,7 @@ cuobjdump -sass gemm_mma.cubin | grep -E "HMMA|LDSM"
 
 **学什么**：NVFP4 两级缩放格式（16 个 FP4 值共享一个 FP8 微块缩放因子 + 张量级 FP32 缩放）、第二代 Transformer Engine 的动态精度管理、数据中心版走 `tcgen05.mma` 消费 NVFP4，消费级版走 `mma.sync.aligned.block_scale`。
 
-**深度内容跳转**：第六部分 6.6 节（消费级/数据中心分叉与 block-scale MMA）。
+**深度内容跳转**：第六部分 6.7 节（消费级/数据中心分叉与 block-scale MMA）。
 
 **承接关系（回应 Hopper 遗留问题 2）**：这一步直接回应"精度下探需要硬件级缩放"的问题——NVFP4 的两级缩放机制，是 Ampere TF32、Hopper FP8 这条"精度持续下探"主线的延续，只是这次伴随的量化误差已经大到必须由硬件专门设计缩放电路来兜底，不能再像 TF32 那样"几乎透明"。
 
@@ -157,7 +157,7 @@ cuobjdump -sass gemm_mma.cubin | grep -E "HMMA|LDSM"
 
 **学什么**：`tcgen05` 流水线的完整数据流（TMA 搬运 → Shared Memory → `tcgen05.mma` 累加进 TMEM → `tcgen05.ld` 取回寄存器做 Epilogue）、CTA Pair 引入的"TPC 级流水线"（相邻两个 SM 共享一次 TMA 搬运的结果，直接喂给两份 Tensor Core）。
 
-**深度内容跳转**：第二部分 2.10（新增章节，完整展开这条新流水线的三个变化：存储通路、发起颗粒度、跨 SM 协作范围）；第五部分 5.10/3.12（DSM 与 CTA Pair 的关系）；第六部分 6.6。
+**深度内容跳转**：第二部分 2.10（新增章节，完整展开这条新流水线的三个变化：存储通路、发起颗粒度、跨 SM 协作范围）；第五部分 5.10/3.12（DSM 与 CTA Pair 的关系）；第六部分 6.7。
 
 **承接关系**：这一步把 3.1（TMEM）和 Hopper 学过的 Cluster/DSM（2.4 节）结合起来——CTA Pair 可以看作"DSM 思想在 Tensor Core 操作数共享层面的进一步下沉"：DSM 让 Block 共享 Shared Memory 中的数据，CTA Pair 让相邻 SM 直接共享 Tensor Core 的输入操作数，链路更短、专用互联延迟更低。
 
@@ -207,8 +207,8 @@ Async Pipeline               ──问题:协作颗粒度只有Warp──▶ War
 | Ampere | Tensor Core（TF32/BF16/`mma.sync`/`ldmatrix`） | Part 6 §6.3 | 是（RTX 30/40/50 均可） |
 | Ampere | `cp.async` | Part 5 §5.7~5.8 | 是（`sm_80`+ 均可） |
 | Ampere | Async Pipeline | Part 2 §2.8~2.9、§2.11；Part 8 §8.5 | 是 |
-| Hopper | Warp Group / Warp Specialization | Part 6 §6.4.1、§6.4.3；Part 2 §2.8 | 否（需要 H100/H200 或云实例） |
-| Hopper | WGMMA | Part 6 §6.4.2 | 否 |
+| Hopper | Warp Group / Warp Specialization | Part 6 §6.6（专章）；Part 2 §2.8 | 否（需要 H100/H200 或云实例） |
+| Hopper | WGMMA | Part 6 §6.5.2 | 否 |
 | Hopper | TMA | Part 5 §5.9 | 否 |
 | Hopper | Distributed Shared Memory / Cluster | Part 5 §5.10 | 否 |
 | Blackwell | TMEM | Part 5 §5.11 | **否**（仅 B100/B200/B300） |

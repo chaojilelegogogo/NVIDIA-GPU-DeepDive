@@ -230,6 +230,6 @@ global --TMA--> shared --tcgen05.cp/mma--> TMEM --tcgen05.ld--> register
 | Blackwell DC | 扩展 TMA + CTA pair | `tcgen05` | TMEM | Cluster + CTA pair |
 | Blackwell `sm_120` | 按该 target 可用 copy 路径 | block-scale `mma.sync` | register | 不按 DC 路径推断 |
 
-`tcgen05` operand、TMEM 与 `sm_120` 分叉见[第六部分 Blackwell Tensor Core](../part06-tensor-core-handbook/06-blackwell-tcgen05.md)；Tensor completion 与 proxy ordering 见[第十三部分同步手册](../part13-synchronization-handbook/04-tensor-synchronization.md)。
+`tcgen05` operand、TMEM 与 `sm_120` 分叉见[第六部分 Blackwell Tensor Core](../part06-tensor-core-handbook/07-blackwell-tcgen05.md)；Tensor completion 与 proxy ordering 见[第十三部分同步手册](../part13-synchronization-handbook/04-tensor-synchronization.md)。
 
 下一篇：[正确性与性能诊断](09-debug-performance.md)。

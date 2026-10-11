@@ -88,7 +88,23 @@ PTX（Parallel Thread Execution）是 NVIDIA 定义的一种**虚拟指令集架
 | `%smid` | 当前线程所在的 SM 编号 | Persistent Kernel（常驻内核）判断自己被分配到了哪个 SM，从而决定要处理的数据分片；也用于负载均衡和调试 |
 | `%clock64()` | 64 位时钟周期计数器 | Kernel 内部的细粒度计时（微基准测试、手工 profile），比 Host 端计时更精细，但要注意不同 SM 的时钟并不严格同步 |
 
-## 7.7 学习方法论：不要死记，要串因果链
+## 7.7 寄存器与执行控制指令
+
+### 7.7.1 `setmaxnreg`（动态寄存器配额调整）
+
+- **对应硬件**：SM 内的寄存器分配单元。寄存器堆是每 SM 固定的物理资源（256 KB，十年未涨，见 A100 手册），`setmaxnreg` 让**运行期**在这个固定总量内重新切分各 Warp Group 的配额。
+- **何时出现**：Hopper（`sm_90a`）。
+- **Why 出现**：在它之前，寄存器配额是**编译期静态**的（`.maxnreg` / `__launch_bounds__`），同一个 CTA 里所有 warp 只能按同一配额均分。但 Warp Specialization 的两种角色资源画像完全不同：生产者（发起 TMA）只需要地址、循环变量、barrier 状态（几十个寄存器），消费者（WGMMA + softmax）需要累加器和中间量（200 个以上）。均分的结果是**计算 warp 不够、搬运 warp 浪费**。`setmaxnreg` 是这个问题在 Hopper 上的正面回答。
+- **How**：`setmaxnreg.inc.sync.aligned.u32 imm`（提高本 Warp Group 配额）/ `setmaxnreg.dec.sync.aligned.u32 imm`（降低配额，把额度让给别的 Warp Group）。典型组合是生产者 `dec 40`、消费者 `inc 232`（详见第六部分 6.6.3 的配额算术与五条硬约束：以 Warp Group 为单位、必须全体线程集体执行且立即数一致、立即数须为 8 的倍数、总量守恒、仅 `sm_90a`）。
+- **配套时空**：`elect.sync`——从 Warp 中选举出单个 leader（返回掩码），用于"只让一个线程发起 TMA / arrive barrier"这类场景，比 `threadIdx.x == 0` 更符合 Warp Specialization 的语义（见[第十三部分 13.5.2](part13-synchronization-handbook/05-collectives-and-atomics.md)）。
+- **验证**：Hopper SASS 中有对应 `SETMAXNREG`；`nvcc --ptxas-options=-v` 看到的是编译期上限（不是最终动态配额），两者需分别确认。
+
+### 7.7.2 门控指令：`barrier.cluster` / `cluster.sync`
+
+- **对应硬件**：Thread Block Cluster（Hopper 引入，第五部分 5.10）的范围屏障。
+- **Why**：`bar.sync` 的作用域是单个 CTA，DSM/TMA Multicast 需要整个 Cluster 内所有 CTA 一起同步，因此有了 Cluster 范围的屏障（第八部分 8.x 有 CUDA 层 `cluster_group` 的对应）。
+
+## 7.8 学习方法论：不要死记，要串因果链
 
 这一部分刻意做成一份"速查表 + 因果关系"的组合，而不是逐条指令的语法手册（语法细节请查阅官方 PTX ISA 文档，且随版本迭代变化）。真正需要内化的是这样一种思维习惯——每次遇到一条新 PTX 指令，问自己：
 

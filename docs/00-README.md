@@ -126,11 +126,11 @@ Grid/Block/Thread/Warp 的编程语义、**Hopper Thread Block Cluster 执行层
 
 ### 第六部分 · Tensor Core 指令全景与编程手册（全书核心）—— [`part06-tensor-core-handbook/00-overview.md`](vol2-cuda-software/part06-tensor-core-handbook/00-overview.md)
 **核心问题：Tensor Core 为什么演进到 `tcgen05`，又如何从 CUDA/CuTe 验证到 PTX/SASS？**
-Volta（WMMA、`mma.sync` m8n8k4、Quad Pair）→ Turing/Ampere（INT8/INT4、TF32/BF16、`mma.sync`、`ldmatrix`/swizzle）→ Hopper（Warp Group、`wgmma.mma_async`、TMA、Warp Specialization）→ Blackwell（TMEM、`tcgen05`、CTA Pair），并系统覆盖 CUTLASS/CuTe MMA Atom、GEMM 自建阶梯与 CUDA → PTX → SASS 验证；明确区分数据中心 `sm_100a`/`sm_103a` 和消费级 `sm_120`。
+Volta（WMMA、`mma.sync` m8n8k4、Quad Pair）→ Turing/Ampere（INT8/INT4、TF32/BF16、`mma.sync`、`ldmatrix`/swizzle）→ Hopper（Warp Group、`wgmma.mma_async`、TMA）→ **Warp Specialization 专章（角色划分、`setmaxnreg` 语义与配额算术、mbarrier full/empty 握手、FA3/CUTLASS 实现）** → Blackwell（TMEM、`tcgen05`、CTA Pair），并系统覆盖 CUTLASS/CuTe MMA Atom、GEMM 自建阶梯与 CUDA → PTX → SASS 验证；明确区分数据中心 `sm_100a`/`sm_103a` 和消费级 `sm_120`。
 
 ### 第七部分 · CUDA 特殊指令 / PTX —— [`part07-ptx-instructions.md`](vol2-cuda-software/part07-ptx-instructions.md)
 **核心问题：PTX 指令对应什么硬件？**
-Warp 级（`shfl.sync`/`vote.sync`/`match.sync`）、Barrier（`bar.sync`/`mbarrier`）、Memory（`ld/st.global/shared`、`cp.async`、`prefetch`）、Tensor（`mma.sync`/`ldmatrix`/`wgmma`/`tcgen05`）、Atomics（`atom`/`red`）、Special Register（`%laneid`/`%warpid`/`%smid`/`%clock64`）。
+Warp 级（`shfl.sync`/`vote.sync`/`match.sync`）、Barrier（`bar.sync`/`mbarrier`）、Memory（`ld/st.global/shared`、`cp.async`、`prefetch`）、Tensor（`mma.sync`/`ldmatrix`/`wgmma`/`tcgen05`）、Atomics（`atom`/`red`）、Special Register（`%laneid`/`%warpid`/`%smid`/`%clock64`）、寄存器与执行控制（`setmaxnreg` 动态配额、`elect.sync`、`barrier.cluster`）。
 
 ### 第八部分 · CUDA C++ API —— [`part08-cuda-cpp-api.md`](vol2-cuda-software/part08-cuda-cpp-api.md)
 **核心问题：API → PTX → SASS 三层关系是什么？**

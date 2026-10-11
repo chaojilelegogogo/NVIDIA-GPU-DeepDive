@@ -62,18 +62,18 @@ Tesla(2006) → Fermi(2010) → Kepler(2012) → Maxwell(2014) → Pascal(2016)
 
 ## 3.8 Hopper（2022，SM 90）—— 全异步 GPU：TMA + Warp Group + Cluster
 
-- **增加了什么**：**TMA**（Tensor Memory Accelerator，第五部分 5.9）；**Warp Group 与 WGMMA**（第六部分 6.5）；**Thread Block Cluster 与 Distributed Shared Memory (DSM)**（第五部分 5.10）；异步事务屏障 `mbarrier`（第七部分 7.2.2）；Tensor Core 第四代原生支持 **FP8**；`setmaxnreg` 动态寄存器重分配（支撑 Warp Specialization，第二部分 2.8）。
+- **增加了什么**：**TMA**（Tensor Memory Accelerator，第五部分 5.9）；**Warp Group 与 WGMMA**（第六部分 6.5）；**Thread Block Cluster 与 Distributed Shared Memory (DSM)**（第五部分 5.10）；异步事务屏障 `mbarrier`（第七部分 7.2.2）；Tensor Core 第四代原生支持 **FP8**；`setmaxnreg` 动态寄存器重分配（支撑 Warp Specialization，第二部分 2.8；完整机制见第六部分 6.6）。
 - **为什么增加**：`cp.async` 虽然实现了异步，但仍然是"**Warp 参与搬运**"——每个线程仍要各自计算地址、各自发起指令，没有利用"要搬的是一整块规整张量"这一结构化信息。TMA 把这部分工作彻底转移给专用硬件电路，只需一个线程发起（第五部分 5.9 已详细展开）。与此同时，Ampere 级别的 `mma.sync` 受限于"Warp（32线程）"这个协作颗粒度，难以进一步扩大处理的 tile 规模来匹配 Hopper 大幅提升的 Tensor Core 峰值算力，于是有了 Warp Group（128线程协作）与 WGMMA（第六部分 6.5）。Thread Block Cluster 则是在"Block 不能跨 SM"（第四部分 4.2.1）这条基本规则**之上**，新增了一层允许多个 Block（跨 SM）通过 Distributed Shared Memory 直接互访彼此 Shared Memory 的协作机制，进一步扩大了"能够高效通信的线程集合"的边界，为 TMA Multicast、跨 SM 协作 GEMM 等技术提供了硬件基础。
 - **软件怎么支持**：`cuTensorMapEncodeTiled` 构建 TMA 描述符；`cp.async.bulk.tensor.*` PTX 指令族；`wgmma.mma_async` + `fence`/`commit_group`/`wait_group` 协议；`cluster.sync()`（Cooperative Groups 对 Cluster 同步的封装）；CUTLASS 3.x/CUTE 是这一代架构上事实标准的高性能库编程范式（第十二部分详细分析）。
-- **性能提升在哪里**：GEMM/Attention 类核心算子在 Hopper 上通过 TMA+WGMMA+Warp Specialization 的组合，可显著提高 Tensor Core 利用率；实际数值取决于 shape、layout、stage 数、Toolkit 和测量方法（第六部分 6.5）。
+- **性能提升在哪里**：GEMM/Attention 类核心算子在 Hopper 上通过 TMA+WGMMA+Warp Specialization 的组合，可显著提高 Tensor Core 利用率；实际数值取决于 shape、layout、stage 数、Toolkit 和测量方法（第六部分 6.5、6.6）。
 
 ## 3.9 Blackwell（2024，SM 100/SM 120）—— 累加器搬出寄存器：TMEM 与极致低精度
 
-- **增加了什么**：**第五代 Tensor Core**，原生支持 **FP4/FP6**（NVFP4 微块缩放格式，第六部分 6.6）；**TMEM**（Tensor Memory，第五部分 5.11、第六部分 6.6）；`tcgen05` 指令族（`mma`/`ld`/`st`/`cp`/`alloc`）；**CTA Pair / Cluster Tensor**（TPC 内相邻两 SM 协作共享操作数，第六部分 6.6）；第二代 Transformer Engine；硬件解压缩引擎（面向压缩模型权重的加载场景）；进一步扩展的 NVLink（第五代）支持更大规模的多 GPU 直连拓扑（如 GB200 NVL72 机架级设计）。
+- **增加了什么**：**第五代 Tensor Core**，原生支持 **FP4/FP6**（NVFP4 微块缩放格式，第六部分 6.7）；**TMEM**（Tensor Memory，第五部分 5.11、第六部分 6.7）；`tcgen05` 指令族（`mma`/`ld`/`st`/`cp`/`alloc`）；**CTA Pair / Cluster Tensor**（TPC 内相邻两 SM 协作共享操作数，第六部分 6.7）；第二代 Transformer Engine；硬件解压缩引擎（面向压缩模型权重的加载场景）；进一步扩展的 NVLink（第五代）支持更大规模的多 GPU 直连拓扑（如 GB200 NVL72 机架级设计）。
 - **为什么增加**：Hopper 的 WGMMA 已经把协作颗粒度和数据来源问题解决得很好，但**累加器（Accumulator）本身还在寄存器堆里**——随着 Tensor Core 处理的 tile 进一步增大、精度进一步降低（意味着单位存储能装下更多元素、单次矩阵乘法产生的累加结果规模相应增大），256KB/SM 这个多代未变的寄存器堆容量逐渐吃紧，成为继续放大 tile、提升算力利用率的新瓶颈——这正是"寄存器放不下，所以增加 Tensor Memory"这条第五部分/第六部分反复强调的因果链的最终落点。同时，精度维度下探到 4/6 bit 后，朴素量化误差已经不可忽视，必须由硬件级微块缩放机制（NVFP4）来兜底可用精度。
 - **软件怎么支持**：PTX/SASS 新增 `tcgen05.*` 指令族；累加结果的读写不再直接对应寄存器变量，而是需要显式的 TMEM 分配/寻址（`tcgen05.alloc`），编程模型上更接近 Shared Memory 而不是寄存器（第五部分 5.11 已详述）；CUTLASS 3.x 后续版本、cuBLAS/cuDNN 内部逐步跟进适配 Blackwell 专属的 `tcgen05` 路径。
 - **性能提升在哪里**：极大规模的 GEMM/Attention（尤其是训练/推理中 Transformer 架构的核心算子）在 Blackwell 上能利用更大的 tile 尺寸和更低精度获得数倍于 Hopper 的有效吞吐（尤其是 FP4/FP6 推理场景）；CTA Pair 机制减少了相邻 SM 间的冗余数据搬运，进一步压榨访存带宽的利用效率。
-- **注意（消费级 vs 数据中心）**：以上 TMEM/`tcgen05`/CTA Pair 特性**只存在于数据中心 Blackwell**（B100/B200/B300，`sm_100a`/`sm_103a`）。GeForce RTX 50 系列消费级 Blackwell（`sm_120`）不具备 TMEM 硬件，Tensor Core 仍走 Hopper 式的寄存器/Shared Memory 路径（`mma.sync.aligned.block_scale`），详见第五部分 5.11 节与第六部分 6.6 节的专门说明。
+- **注意（消费级 vs 数据中心）**：以上 TMEM/`tcgen05`/CTA Pair 特性**只存在于数据中心 Blackwell**（B100/B200/B300，`sm_100a`/`sm_103a`）。GeForce RTX 50 系列消费级 Blackwell（`sm_120`）不具备 TMEM 硬件，Tensor Core 仍走 Hopper 式的寄存器/Shared Memory 路径（`mma.sync.aligned.block_scale`），详见第五部分 5.11 节与第六部分 6.7 节的专门说明。
 
 ## 3.10 全景对照表
 

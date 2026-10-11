@@ -4,7 +4,7 @@
 >
 > 约定：本章**不出现 CUDA 代码**，只讲硬件结构、硬件 Feature，以及「算力从哪来」的推导。**重点回答一个问题：B200 相比 H100 改了什么、为什么这样改。**
 >
-> ⚠️ 范围澄清：本章指的是 **数据中心 Blackwell（B100/B200，`sm_100a`）**。消费级 GeForce RTX 50 系列（`sm_120`）是另一颗设计差异很大的芯片，**没有** TMEM、CTA Pair 和 `tcgen05`，不要混为一谈（详见 Part 6 §6.6）。
+> ⚠️ 范围澄清：本章指的是 **数据中心 Blackwell（B100/B200，`sm_100a`）**。消费级 GeForce RTX 50 系列（`sm_120`）是另一颗设计差异很大的芯片，**没有** TMEM、CTA Pair 和 `tcgen05`，不要混为一谈（详见 Part 6 §6.7）。
 
 ## 0. 定位：B200 的三个"第一次"
 
@@ -104,7 +104,7 @@ B200：  TMA → Shared Memory → tcgen05.mma      → 累加进【TMEM】    �
 两个关键变化：
 
 1. **结果归宿变了**：从"发起者私有寄存器"换成"CTA 共享的 TMEM"，因此累加器不再挤占寄存器。
-2. **发起颗粒度放松了**：H100 的 `wgmma.mma_async` 必须整个 Warp Group（128 线程）集体发起（因为结果要落到发起者 Warp 的私有寄存器）；Blackwell 某些 `tcgen05.mma` 变体**单线程就能发起**（结果进 TMEM，不再受"发起者=结果拥有者"约束）。注意：这说的是**发起粒度**放松，不等于任意线程可无条件触发任意 Tensor 操作，完整边界见 Part 6 §6.6。
+2. **发起颗粒度放松了**：H100 的 `wgmma.mma_async` 必须整个 Warp Group（128 线程）集体发起（因为结果要落到发起者 Warp 的私有寄存器）；Blackwell 某些 `tcgen05.mma` 变体**单线程就能发起**（结果进 TMEM，不再受"发起者=结果拥有者"约束）。注意：这说的是**发起粒度**放松，不等于任意线程可无条件触发任意 Tensor 操作，完整边界见 Part 6 §6.7。
 
 ## 4. 算力公式：从硬件单元推导 B200 峰值
 
@@ -247,7 +247,7 @@ AI_ridge(B200, FP4)  = 9000 TFLOPS / 8 TB/s ≈ 1125 FLOP/Byte
 | 双 Die Chiplet | ❌ | ❌ | ✅ | NV-HBI 10 TB/s |
 | NVLink | 3.0 | 4.0 | **5.0 (1.8 TB/s)** | 互联带宽翻倍 |
 
-> 关于"消费级 vs 数据中心"：上表列的 TMEM / `tcgen05` / CTA Pair **只存在于数据中心 Blackwell**（B100/B200，`sm_100a`）。RTX 50 系列（`sm_120`）没有 TMEM，低精度 MMA 走 `mma.sync.aligned.block_scale` 这条寄存器/Shared 路径，详见 Part 6 §6.6。
+> 关于"消费级 vs 数据中心"：上表列的 TMEM / `tcgen05` / CTA Pair **只存在于数据中心 Blackwell**（B100/B200，`sm_100a`）。RTX 50 系列（`sm_120`）没有 TMEM，低精度 MMA 走 `mma.sync.aligned.block_scale` 这条寄存器/Shared 路径，详见 Part 6 §6.7。
 
 ## 7. 参考资料与来源
 

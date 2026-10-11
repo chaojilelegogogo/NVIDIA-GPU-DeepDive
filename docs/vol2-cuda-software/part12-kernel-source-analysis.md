@@ -101,7 +101,7 @@ __global__ void gemmKernel(half* A, half* B, float* C, int M, int N, int K) {
 
 - **Hardware Pipeline 全景**：这个 kernel 同时用到了第五部分（`cp.async` 搬运）、第二部分（Double Buffer/Producer-Consumer）、第六部分（`ldmatrix`+`mma.sync`）三部分的全部核心机制，是从"教学 kernel"过渡到"工业级 kernel"的分水岭案例。GEMM 也是 Roofline 模型（第一部分 1.6）中 **Compute Bound** 的典型代表——当矩阵规模足够大时，数据复用率极高，瓶颈会真正落在 Tensor Core 的算力上，这也是为什么 Tensor Core 的历代演进（第六部分）几乎都以 GEMM 作为衡量基准。
 
-> 此骨架省略了 operand layout、`ldmatrix` address mapping、异步完成协议和 epilogue 分片；应作为数据流教学而非可直接编译的完整 kernel。自建 GEMM 的分阶段路线和 CUDA→PTX→SASS 验证见第六部分 6.7 节。
+> 此骨架省略了 operand layout、`ldmatrix` address mapping、异步完成协议和 epilogue 分片；应作为数据流教学而非可直接编译的完整 kernel。自建 GEMM 的分阶段路线和 CUDA→PTX→SASS 验证见第六部分 6.8 节。
 
 ## 12.6 LayerNorm：跨线程规约 + 数值稳定性
 
@@ -119,7 +119,7 @@ FlashAttention 要解决的核心问题：朴素 Attention（`softmax(QK^T/√d)
 
 FlashAttention-2/3 的演进路线，恰好是第三部分讲的硬件时间线在具体算子上的投影：
 - **FlashAttention-1/2（Ampere 时代）**：核心依赖 `mma.sync`/`ldmatrix`（第六部分 6.4）与 `cp.async` 双缓冲（第五部分 5.8），重点优化了循环顺序（外层 K/V、内层 Q，减少非矩阵乘法运算的比重）和 Warp 内的任务划分,以尽量减少 Shared Memory 读写和非 Tensor Core 计算的占比。
-- **FlashAttention-3（Hopper 时代）**：全面转向 Warp Specialization（第二部分 2.8）——用专门的 Warp Group 发起 TMA 加载 K/V 分块，另一组 Warp Group 专职发起 WGMMA 做 `QK^T` 和 `×V` 的矩阵乘加，并利用 WGMMA 的异步特性，让 Softmax 的（相对）低吞吐标量计算能与下一块的 Tensor Core 矩阵乘加重叠执行，同时探索了利用 FP8 精度进一步提升吞吐。
+- **FlashAttention-3（Hopper 时代）**：全面转向 Warp Specialization（[第六部分 6.6](../vol2-cuda-software/part06-tensor-core-handbook/06-warp-specialization.md) 有专章拆解角色划分与握手协议；概念动机见第二部分 2.8）——用专门的 Warp Group 发起 TMA 加载 K/V 分块，另一组 Warp Group 专职发起 WGMMA 做 `QK^T` 和 `×V` 的矩阵乘加，并利用 WGMMA 的异步特性，让 Softmax 的（相对）低吞吐标量计算能与下一块的 Tensor Core 矩阵乘加重叠执行，同时探索了利用 FP8 精度进一步提升吞吐。
 
 ## 12.9 CUTLASS GEMM：工业级模板库的设计哲学
 
@@ -130,7 +130,7 @@ CUTLASS 是 NVIDIA 官方开源的高性能线性代数模板库，也是理解"
 - **Pipeline 抽象**：CUTLASS 提供 `PipelineTmaAsync` 等类，直接封装了第二部分讲的多级流水线 Producer/Consumer 协议，底层对应 TMA + `mbarrier`。
 - 建议的阅读路径：先读 CUTLASS 官方仓库中面向教学的 `examples/`（从简单的 SIMT GEMM 到 Ampere `cp.async` GEMM，再到 Hopper `wgmma`+TMA 的 GEMM），配合 Colfax Research 发布的 Hopper/Blackwell CUTLASS 系列技术博客（第六部分调研中引用过），再深入库内部的模板实现。
 
-> 如何从 Device GEMM 沿着 Collective、Tiled MMA、MMA Atom 追到 PTX，以及如何安排 1→7 版自建 GEMM，见第六部分 6.7 节。
+> 如何从 Device GEMM 沿着 Collective、Tiled MMA、MMA Atom 追到 PTX，以及如何安排 1→7 版自建 GEMM，见第六部分 6.8 节。
 
 ## 12.10 FlashMLA：面向 MLA 注意力变体的极致优化
 

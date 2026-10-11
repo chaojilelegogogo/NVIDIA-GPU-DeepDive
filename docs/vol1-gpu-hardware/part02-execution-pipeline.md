@@ -54,7 +54,7 @@ Consumer:               [计算 tile 0] [计算 tile 1] [计算 tile 2] ...
                          ↑ 只要 tile 0 就绪，计算就能立刻开始，不用等所有搬运完成
 ```
 
-Hopper 的 Warp Group 编程模型进一步把这种 Producer/Consumer 模式**显式硬件化**——一个 CTA 内的不同 Warp Group 可以分别专职做"搬运（发起 TMA）"和"计算（发起 WGMMA）"，通过 `setmaxnreg`（第六/七部分详述）动态调节各自的寄存器配额（搬运 Warp Group 几乎不需要寄存器，可以把配额让给计算 Warp Group），这是 FlashAttention-3、CUTLASS 3.x 在 Hopper 上广泛采用的"Warp Specialization"设计范式（第十二部分会具体分析源码）。
+Hopper 的 Warp Group 编程模型进一步把这种 Producer/Consumer 模式**显式硬件化**——一个 CTA 内的不同 Warp Group 可以分别专职做"搬运（发起 TMA）"和"计算（发起 WGMMA）"，通过 `setmaxnreg`（第六部分 6.6）动态调节各自的寄存器配额（搬运 Warp Group 几乎不需要寄存器，可以把配额让给计算 Warp Group），这是 FlashAttention-3、CUTLASS 3.x 在 Hopper 上广泛采用的"Warp Specialization"设计范式（[第六部分 6.6](../vol2-cuda-software/part06-tensor-core-handbook/06-warp-specialization.md) 完整展开角色划分、`setmaxnreg` 语义约束与 mbarrier 握手协议；第十二部分 12.8 分析 FA3 的源码结构）。
 
 ### 2.9 Double Buffer / Triple Buffer / Ping-Pong
 
@@ -68,7 +68,7 @@ Hopper 的 Warp Group 编程模型进一步把这种 Producer/Consumer 模式**�
 
 **流水线阶段的变化**：Hopper 上一次 WGMMA 计算的"生命周期"是 `TMA 搬运 → Shared Memory → wgmma.mma_async 读取操作数、累加进寄存器 → 寄存器参与下一轮或写回`；Blackwell 上变成了 `TMA 搬运 → Shared Memory → tcgen05.mma 读取操作数、累加进 TMEM → tcgen05.ld 按需把结果取回寄存器 → 写回`——多出了一段**"计算单元与专属存储之间的独立数据通路"**，这段通路（TMEM 的读写）不占用寄存器堆的端口，也不占用 Shared Memory 的带宽，是一条相对于 Hopper 全新的、专属于 Tensor Core 的流水线支路。
 
-**发起颗粒度的变化**：Hopper 的 `wgmma.mma_async` 必须由整个 Warp Group（128 线程）集体发射；数据中心 Blackwell 中，某些 `tcgen05.mma` 变体可以由**单个线程**发起（因为结果去向是 TMEM，不再固定落在发起者所在 Warp 的私有寄存器里）。这扩大了“谁负责发出计算指令”和“哪些线程后续会用到结果”的解耦空间，但**不**意味着任意线程可无条件触发任意 Tensor 操作：具体变体仍可能要求 CTA group/topology、TMEM 分配、TMA completion 和 commit/fence/wait 协议。完整边界见[第六部分 6.6](../vol2-cuda-software/part06-tensor-core-handbook/06-blackwell-tcgen05.md)与[第十三部分 13.4](../vol2-cuda-software/part13-synchronization-handbook/04-tensor-synchronization.md)。
+**发起颗粒度的变化**：Hopper 的 `wgmma.mma_async` 必须由整个 Warp Group（128 线程）集体发射；数据中心 Blackwell 中，某些 `tcgen05.mma` 变体可以由**单个线程**发起（因为结果去向是 TMEM，不再固定落在发起者所在 Warp 的私有寄存器里）。这扩大了“谁负责发出计算指令”和“哪些线程后续会用到结果”的解耦空间，但**不**意味着任意线程可无条件触发任意 Tensor 操作：具体变体仍可能要求 CTA group/topology、TMEM 分配、TMA completion 和 commit/fence/wait 协议。完整边界见[第六部分 6.7](../vol2-cuda-software/part06-tensor-core-handbook/07-blackwell-tcgen05.md)与[第十三部分 13.4](../vol2-cuda-software/part13-synchronization-handbook/04-tensor-synchronization.md)。
 
 **CTA Pair 引入的跨 SM 流水线阶段**：Blackwell 允许 TPC 内两个相邻 SM 上的 CTA 结成"CTA Pair"，共享同一份 Tensor Core 输入操作数（第五部分 5.10/3.12 节）。这意味着 SM 内部的流水线视角需要扩展为"TPC 级流水线"：一份数据被 TMA 搬进其中一个 SM 的 Shared Memory 后，通过 TPC 内专用互联直接喂给两个 SM 的 Tensor Core，而不需要各自重复搬运——这是流水线的"生产者"阶段从"单 SM 内的一个 Warp Group"进一步扩展为"一对 SM 共享的一次搬运"。
 

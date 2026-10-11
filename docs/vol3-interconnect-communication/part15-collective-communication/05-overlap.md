@@ -91,7 +91,7 @@ Stream 级重叠有个天花板：**NCCL kernel 和计算 kernel 是两个独立
 
 | 代表 | 做法 | 收益 |
 |---|---|---|
-| **DeepEP** | MoE dispatch/combine 写成融合 kernel，warp 专职化（Part 2 的 Warp Specialization 思想复用） | 通信与 expert GEMM 在 kernel 内精细交错 |
+| **DeepEP** | MoE dispatch/combine 写成融合 kernel，warp 专职化（Part 2 §2.8 / [Part 6 §6.6](../../vol2-cuda-software/part06-tensor-core-handbook/06-warp-specialization.md) 的 Warp Specialization 思想复用） | 通信与 expert GEMM 在 kernel 内精细交错 |
 | **Flux / 分布式 GEMM** | GEMM tile 算完一片立刻发一片（tile 粒度流水线） | 消除 kernel 边界气泡 |
 | **TMA Multicast 思路** | Hopper 的 TMA 组播（Part 5 §5）本身就是"硬件级的一次写多处" | 节点内广播场景的极致形态 |
 
